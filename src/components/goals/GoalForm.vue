@@ -37,7 +37,7 @@
         <span class="text-caption font-weight-bold text-uppercase tracking-wider text-medium-emphasis me-1">
           Source:
         </span>
-        <v-btn
+        <!-- <v-btn
           size="small"
           :variant="selectedSourceMode === 'udemy' ? 'flat' : 'outlined'"
           :color="selectedSourceMode === 'udemy' ? 'primary' : 'medium-emphasis'"
@@ -46,7 +46,7 @@
           @click="selectedSourceMode = 'udemy'"
         >
           Udemy & Web
-        </v-btn>
+        </v-btn> -->
         <v-btn
           size="small"
           :variant="selectedSourceMode === 'youtube' ? 'flat' : 'outlined'"
@@ -165,6 +165,101 @@
           </span>
         </div>
 
+        <!-- Backend Offline Alert (if server is not reachable) -->
+        <v-alert
+          v-if="!isBackendOnline"
+          type="error"
+          variant="tonal"
+          density="comfortable"
+          class="mb-3 text-caption rounded-lg"
+        >
+          <div class="d-flex align-center justify-space-between flex-wrap gap-2">
+            <span>
+              Backend server is offline or unreachable. Please verify the backend is running (<code class="font-mono">npm run server:local</code> or <code class="font-mono">npm run server:ip</code>).
+            </span>
+            <v-btn
+              size="x-small"
+              variant="outlined"
+              color="error"
+              class="font-weight-bold"
+              @click="fetchYouTubeStatus"
+            >
+              Retry Connection
+            </v-btn>
+          </div>
+        </v-alert>
+
+        <!-- YouTube Setup Required Notice (Case B: API Key Missing & Backend Online) -->
+        <div
+          v-else-if="!isYouTubeApiKeyConfigured && !isYouTubeNoticeDismissed"
+          class="youtube-setup-notice-card pa-4 mb-3 rounded-xl border bg-surface"
+        >
+          <div class="d-flex align-start gap-3">
+            <div class="setup-notice-avatar d-flex align-center justify-center rounded-lg flex-shrink-0">
+              <i class="mdi mdi-key-alert-outline text-amber-darken-3" style="font-size: 22px;"></i>
+            </div>
+            <div class="flex-grow-1 min-w-0">
+              <div class="d-flex align-center justify-space-between flex-wrap gap-2 mb-1">
+                <h3 class="text-subtitle-2 font-weight-bold text-primary-text mb-0">
+                  YouTube Setup Required
+                </h3>
+                <span class="setup-notice-pill font-weight-bold text-caption">
+                  Judge Setup
+                </span>
+              </div>
+              <p class="text-caption text-medium-emphasis mb-3 line-height-relaxed">
+                YouTube playlist importing requires a free Google YouTube Data API key. This project does not include a preconfigured API key. To try the YouTube integration, generate your own API key by following the setup instructions below.
+              </p>
+              <div class="d-flex align-center flex-wrap gap-2">
+                <button
+                  type="button"
+                  class="setup-guide-btn font-weight-bold shadow-orange text-caption d-inline-flex align-center gap-1"
+                  @click="showYouTubeGuideModal = true"
+                >
+                  <i class="mdi mdi-help-circle-outline" style="font-size: 15px;"></i>
+                  <span>How to Get Your API Key</span>
+                </button>
+                <button
+                  type="button"
+                  class="setup-later-btn font-weight-medium text-caption"
+                  @click="isYouTubeNoticeDismissed = true"
+                >
+                  I'll Configure It Later
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Helper Status Line & Setup Guide Launcher Button -->
+        <div class="d-flex align-center justify-space-between flex-wrap gap-2 mb-2">
+          <div class="d-flex align-center gap-2">
+            <span
+              v-if="isYouTubeApiKeyConfigured"
+              class="youtube-status-active-chip text-caption font-weight-medium d-inline-flex align-center gap-1"
+            >
+              <i class="mdi mdi-check-circle text-success" style="font-size: 14px;"></i>
+              <span>YouTube Data API v3 Active</span>
+            </span>
+            <span
+              v-else-if="isBackendOnline"
+              class="youtube-status-missing-chip text-caption font-weight-medium d-inline-flex align-center gap-1"
+            >
+              <i class="mdi mdi-alert-circle-outline text-amber-darken-3" style="font-size: 14px;"></i>
+              <span>API Key Required</span>
+            </span>
+          </div>
+
+          <button
+            type="button"
+            class="guide-launcher-link text-caption font-weight-medium d-inline-flex align-center gap-1"
+            @click="showYouTubeGuideModal = true"
+          >
+            <i class="mdi mdi-book-open-page-variant-outline" style="font-size: 14px;"></i>
+            <span>YouTube API Setup Guide</span>
+          </button>
+        </div>
+
         <div class="url-input-container">
           <v-text-field
             v-model="youtubeUrl"
@@ -212,16 +307,29 @@
         >
           <div class="d-flex flex-wrap align-center justify-space-between gap-2">
             <span class="flex-grow-1 text-wrap">{{ youtubeNotice }}</span>
-            <v-btn
-              size="x-small"
-              variant="flat"
-              color="primary"
-              prepend-icon="mdi-format-list-bulleted-type"
-              class="font-weight-bold flex-shrink-0"
-              @click="openManualSyllabusModal"
-            >
-              Use Manual Syllabus
-            </v-btn>
+            <div class="d-flex align-center gap-2 flex-shrink-0">
+              <v-btn
+                v-if="!isYouTubeApiKeyConfigured"
+                size="x-small"
+                variant="flat"
+                color="primary"
+                prepend-icon="mdi-help-circle-outline"
+                class="font-weight-bold"
+                @click="showYouTubeGuideModal = true"
+              >
+                How to Get Your API Key
+              </v-btn>
+              <v-btn
+                size="x-small"
+                variant="tonal"
+                color="primary"
+                prepend-icon="mdi-format-list-bulleted-type"
+                class="font-weight-bold"
+                @click="openManualSyllabusModal"
+              >
+                Use Manual Syllabus
+              </v-btn>
+            </div>
           </div>
         </v-alert>
 
@@ -498,15 +606,24 @@
         <v-btn variant="text" @click="snackbar.show = false">Close</v-btn>
       </template>
     </v-snackbar>
+
+    <!-- YouTube API Setup Guide Modal (Judge-Friendly) -->
+    <YouTubeSetupGuideModal
+      v-model="showYouTubeGuideModal"
+      :api-key-configured="isYouTubeApiKeyConfigured"
+      :is-server-online="isBackendOnline"
+      @refresh-status="fetchYouTubeStatus"
+    />
   </v-card>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import QuickSyllabusModal from './QuickSyllabusModal.vue';
+import YouTubeSetupGuideModal from '../youtube/YouTubeSetupGuideModal.vue';
 import { createSampleLlmGoal } from '../../services/sampleCourse.js';
 import { generateMilestonePlan } from '../../services/milestoneEngine.js';
-import { apiFetch } from '../../services/apiClient.js';
+import { apiFetch, checkYouTubeApiStatus } from '../../services/apiClient.js';
 
 const props = defineProps({
   goal: {
@@ -533,6 +650,37 @@ const youtubeErrorMessage = ref('');
 const youtubeNotice = ref('');
 const youtubeExtractedData = ref(null);
 const youtubeReviewVideos = ref([]);
+const showYouTubeGuideModal = ref(false);
+const isYouTubeApiKeyConfigured = ref(false);
+const isYouTubeNoticeDismissed = ref(false);
+const isBackendOnline = ref(true);
+const isCheckingYouTubeStatus = ref(false);
+
+async function fetchYouTubeStatus() {
+  isCheckingYouTubeStatus.value = true;
+  try {
+    const status = await checkYouTubeApiStatus();
+    isBackendOnline.value = status.online;
+    isYouTubeApiKeyConfigured.value = status.apiKeyConfigured;
+  } catch {
+    isBackendOnline.value = false;
+    isYouTubeApiKeyConfigured.value = false;
+  } finally {
+    isCheckingYouTubeStatus.value = false;
+  }
+}
+
+watch(selectedSourceMode, (mode) => {
+  if (mode === 'youtube') {
+    fetchYouTubeStatus();
+  }
+});
+
+onMounted(() => {
+  if (selectedSourceMode.value === 'youtube') {
+    fetchYouTubeStatus();
+  }
+});
 
 const snackbar = ref({
   show: false,
@@ -772,7 +920,14 @@ async function handleExtractYouTube() {
       const errCode = typeof errObj === 'object' && errObj !== null ? errObj.code : (result.code || '');
 
       if (result.missingKey || errCode === 'MISSING_API_KEY') {
-        youtubeNotice.value = errMsg;
+        youtubeNotice.value = 'YouTube API key is not configured on the backend server. Follow the Google Cloud setup guide to configure your free YOUTUBE_API_KEY in the .env file.';
+        isYouTubeApiKeyConfigured.value = false;
+      } else if (errCode === 'INVALID_API_KEY') {
+        youtubeNotice.value = 'The configured YouTube API key is invalid or unauthorized. Please verify your API key in Google Cloud Console.';
+      } else if (errCode === 'API_NOT_ENABLED') {
+        youtubeNotice.value = 'YouTube Data API v3 is not enabled in your Google Cloud Project. Please enable it in Google Cloud Console.';
+      } else if (errCode === 'QUOTA_EXCEEDED') {
+        youtubeNotice.value = 'YouTube API daily quota limit exceeded. You can use the Manual Syllabus option or try again later.';
       } else {
         youtubeErrorMessage.value = errMsg;
       }
@@ -781,6 +936,7 @@ async function handleExtractYouTube() {
 
     // Success
     const data = result.data;
+    isYouTubeApiKeyConfigured.value = true;
     youtubeExtractedData.value = data;
     youtubeReviewVideos.value = [...(data.videos || [])];
 
@@ -976,5 +1132,88 @@ async function handleSaveGoal() {
 }
 .shadow-orange {
   box-shadow: 0 2px 8px rgba(233, 120, 36, 0.28) !important;
+}
+
+.youtube-setup-notice-card {
+  background: linear-gradient(135deg, #FFFDF8 0%, #FFFBEB 100%) !important;
+  border-color: #FDE68A !important;
+}
+
+.setup-notice-avatar {
+  width: 36px;
+  height: 36px;
+  background-color: #FEF3C7;
+  border: 1px solid #FCD34D;
+}
+
+.setup-notice-pill {
+  font-size: 0.6875rem;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background-color: #FEF3C7;
+  color: #B45309;
+  border: 1px solid #FCD34D;
+}
+
+.setup-guide-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  background-color: var(--color-primary-orange, #E97824);
+  color: #FFFFFF;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.setup-guide-btn:hover {
+  background-color: var(--color-primary-hover, #D36515);
+}
+
+.setup-later-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  background-color: transparent;
+  color: var(--color-medium-emphasis, #6B7280);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.setup-later-btn:hover {
+  color: var(--color-primary-text, #1E293B);
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.youtube-status-active-chip {
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background-color: #F0FDF4;
+  color: #16A34A;
+  border: 1px solid #BBF7D0;
+  font-size: 0.75rem;
+}
+
+.youtube-status-missing-chip {
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background-color: #FFFBEB;
+  color: #B45309;
+  border: 1px solid #FDE68A;
+  font-size: 0.75rem;
+}
+
+.guide-launcher-link {
+  background: transparent;
+  border: none;
+  color: var(--color-primary-orange, #E97824);
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.guide-launcher-link:hover {
+  text-decoration: underline;
+  color: var(--color-primary-hover, #D36515);
 }
 </style>

@@ -126,6 +126,61 @@ export function formatDuration(totalSeconds) {
 }
 
 /**
+ * Categorizes upstream YouTube Data API v3 error responses into structured codes.
+ * Differentiates missing key, invalid key, disabled API, quota exceeded, and network rejections.
+ * Guaranteed never to log or leak any API key string.
+ * 
+ * @param {number} status - Upstream HTTP response status
+ * @param {string} [errBody=''] - Raw upstream response text
+ * @returns {{ code: string, message: string, httpStatus: number }}
+ */
+export function categorizeYouTubeApiError(status, errBody = '') {
+  if (status === 429 || errBody.includes('quotaExceeded')) {
+    return {
+      code: 'QUOTA_EXCEEDED',
+      message: 'YouTube API daily quota limit exceeded. Please try again later or use the Manual Syllabus option.',
+      httpStatus: 429
+    };
+  }
+
+  if (errBody.includes('API_KEY_INVALID') || errBody.includes('keyInvalid') || errBody.includes('API key not valid')) {
+    return {
+      code: 'INVALID_API_KEY',
+      message: 'The configured YouTube API key is invalid or unauthorized. Please verify your API key in Google Cloud Console: https://console.cloud.google.com/apis/credentials',
+      httpStatus: 400
+    };
+  }
+
+  if (
+    errBody.includes('accessNotConfigured') ||
+    errBody.includes('SERVICE_DISABLED') ||
+    errBody.includes('has not been used in project') ||
+    errBody.includes('API has not been enabled')
+  ) {
+    return {
+      code: 'API_NOT_ENABLED',
+      message: 'YouTube Data API v3 is not enabled in your Google Cloud Project. Please enable it in the Google Cloud API Library: https://console.cloud.google.com/apis/library/youtube.googleapis.com',
+      httpStatus: 403
+    };
+  }
+
+  if (status === 403) {
+    return {
+      code: 'UPSTREAM_API_ERROR',
+      message: 'YouTube API request was rejected. Verify your API key restrictions and that YouTube Data API v3 is enabled.',
+      httpStatus: 403
+    };
+  }
+
+  const upstreamStatus = status >= 500 ? 502 : status;
+  return {
+    code: 'UPSTREAM_API_ERROR',
+    message: `YouTube Data API returned HTTP ${status}: Unable to retrieve details.`,
+    httpStatus: upstreamStatus
+  };
+}
+
+/**
  * Fetches playlist metadata and all video items using the official YouTube Data API v3.
  * 
  * @param {string} playlistId - YouTube playlist ID
@@ -152,36 +207,15 @@ export async function fetchYouTubePlaylist(playlistId, apiKey, maxVideos = 150) 
     const playlistMetaUrl = `https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&id=${encodeURIComponent(playlistId)}&key=${encodeURIComponent(cleanKey)}`;
     const metaRes = await fetch(playlistMetaUrl);
 
-    if (metaRes.status === 403 || metaRes.status === 429) {
-      const errBody = await metaRes.text().catch(() => '');
-      if (errBody.includes('quotaExceeded')) {
-        return {
-          success: false,
-          httpStatus: 429,
-          error: {
-            code: 'QUOTA_EXCEEDED',
-            message: 'YouTube API daily quota limit exceeded. Please try again later or use the Manual Syllabus option.'
-          }
-        };
-      }
-      return {
-        success: false,
-        httpStatus: 403,
-        error: {
-          code: 'UPSTREAM_API_ERROR',
-          message: 'YouTube API request was rejected. Verify that YouTube Data API v3 is enabled on your API key.'
-        }
-      };
-    }
-
     if (!metaRes.ok) {
-      const upstreamStatus = metaRes.status >= 500 ? 502 : metaRes.status;
+      const errBody = await metaRes.text().catch(() => '');
+      const categorized = categorizeYouTubeApiError(metaRes.status, errBody);
       return {
         success: false,
-        httpStatus: upstreamStatus,
+        httpStatus: categorized.httpStatus,
         error: {
-          code: 'UPSTREAM_API_ERROR',
-          message: `YouTube Data API returned HTTP ${metaRes.status}: Unable to retrieve playlist details.`
+          code: categorized.code,
+          message: categorized.message
         }
       };
     }
@@ -216,18 +250,17 @@ export async function fetchYouTubePlaylist(playlistId, apiKey, maxVideos = 150) 
 
       const itemsRes = await fetch(pageUrl);
       if (!itemsRes.ok) {
-        if (itemsRes.status === 403 || itemsRes.status === 429) {
-          const errBody = await itemsRes.text().catch(() => '');
-          if (errBody.includes('quotaExceeded')) {
-            return {
-              success: false,
-              httpStatus: 429,
-              error: {
-                code: 'QUOTA_EXCEEDED',
-                message: 'YouTube API daily quota limit exceeded.'
-              }
-            };
-          }
+        const errBody = await itemsRes.text().catch(() => '');
+        const categorized = categorizeYouTubeApiError(itemsRes.status, errBody);
+        if (categorized.code === 'QUOTA_EXCEEDED' || categorized.code === 'INVALID_API_KEY' || categorized.code === 'API_NOT_ENABLED') {
+          return {
+            success: false,
+            httpStatus: categorized.httpStatus,
+            error: {
+              code: categorized.code,
+              message: categorized.message
+            }
+          };
         }
         break;
       }
@@ -376,24 +409,15 @@ export async function fetchYouTubeSingleVideo(videoId, apiKey) {
     const videoUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${encodeURIComponent(videoId)}&key=${encodeURIComponent(cleanKey)}`;
     const res = await fetch(videoUrl);
 
-    if (res.status === 403 || res.status === 429) {
-      return {
-        success: false,
-        httpStatus: 429,
-        error: {
-          code: 'QUOTA_EXCEEDED',
-          message: 'YouTube API daily quota limit exceeded.'
-        }
-      };
-    }
-
     if (!res.ok) {
+      const errBody = await res.text().catch(() => '');
+      const categorized = categorizeYouTubeApiError(res.status, errBody);
       return {
         success: false,
-        httpStatus: res.status >= 500 ? 502 : res.status,
+        httpStatus: categorized.httpStatus,
         error: {
-          code: 'UPSTREAM_API_ERROR',
-          message: `YouTube API returned HTTP ${res.status}`
+          code: categorized.code,
+          message: categorized.message
         }
       };
     }

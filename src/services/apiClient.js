@@ -71,6 +71,28 @@ export async function fetchYouTubePlaylistApi(url) {
 }
 
 /**
+ * Checks YouTube API key configuration status from the backend.
+ * Never exposes any sensitive values; returns pure boolean configuration status.
+ * 
+ * @returns {Promise<{ online: boolean, apiKeyConfigured: boolean, error?: string }>}
+ */
+export async function checkYouTubeApiStatus() {
+  try {
+    const res = await apiFetch('/api/youtube/status', {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return { online: true, apiKeyConfigured: Boolean(data.apiKeyConfigured) };
+    }
+    return { online: true, apiKeyConfigured: false, error: `HTTP ${res.status}` };
+  } catch (err) {
+    return { online: false, apiKeyConfigured: false, error: err.message };
+  }
+}
+
+/**
  * Uploads a temporary wallpaper image to the backend server.
  * 
  * @param {string} base64Data - Base64 encoded image string

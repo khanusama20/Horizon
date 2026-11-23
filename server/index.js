@@ -103,6 +103,7 @@ app.get('/api/health', (req, res) => {
     host: HOST,
     port: PORT,
     localIp,
+    youtubeApiKeyConfigured: Boolean(process.env.YOUTUBE_API_KEY && process.env.YOUTUBE_API_KEY.trim() !== ''),
     timestamp: new Date().toISOString()
   });
 });
@@ -153,6 +154,20 @@ app.post('/api/course-info/extract', async (req, res) => {
       error: `Internal server error during metadata extraction: ${err.message}`
     });
   }
+});
+
+/**
+ * YouTube Status Endpoint
+ * GET /api/youtube/status
+ * Safe diagnostic endpoint reporting whether the YouTube API key is configured.
+ * Never exposes the key or its value.
+ */
+app.get('/api/youtube/status', (req, res) => {
+  res.json({
+    status: 'ok',
+    apiKeyConfigured: Boolean(process.env.YOUTUBE_API_KEY && process.env.YOUTUBE_API_KEY.trim() !== ''),
+    service: 'youtube-data-api-v3'
+  });
 });
 
 /**
