@@ -273,7 +273,7 @@ export class CanvasWallpaperEngine {
    */
   static renderMobileLayout(ctx, width, height, safeZone, data) {
     const { goal, palette, daysRemaining, progressPct, activeMilestone, upcomingMilestone, badges, motivation } = data;
-    const fontPrimary = "'Plus Jakarta Sans', system-ui, -apple-system, sans-serif";
+    const fontPrimary = "'Roboto', -apple-system, BlinkMacSystemFont, system-ui, sans-serif";
 
     const contentLeft = safeZone.sideMargin;
     const contentWidth = width - (safeZone.sideMargin * 2);
@@ -473,7 +473,7 @@ export class CanvasWallpaperEngine {
    */
   static renderDesktopLayout(ctx, width, height, safeZone, data) {
     const { goal, palette, daysRemaining, progressPct, activeMilestone, upcomingMilestone, badges, motivation } = data;
-    const fontPrimary = "'Plus Jakarta Sans', system-ui, -apple-system, sans-serif";
+    const fontPrimary = "'Roboto', -apple-system, BlinkMacSystemFont, system-ui, sans-serif";
 
     // Desktop Asymmetric Split:
     // Left 55% (Art Scenic Focus & Quote)
