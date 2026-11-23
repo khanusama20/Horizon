@@ -454,8 +454,9 @@ async function handleExtractUrl() {
         message: urlImportNotice.value,
         color: 'warning'
       };
-      if (result.partialData?.title && !props.goal.title) {
-        props.goal.title = result.partialData.title;
+      const titleCandidate = result.partialData?.title || result.partialData?.suggestedTitle;
+      if (titleCandidate && (!props.goal.title || props.goal.title === '')) {
+        props.goal.title = titleCandidate;
       }
       showSyllabusModal.value = true;
       return;

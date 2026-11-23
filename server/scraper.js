@@ -17,6 +17,40 @@ export const RESTRICTED_ACCESS_USER_MESSAGE =
   'Unable to automatically access this course. The website restricts external requests. You can still continue by entering the course details and pasting its syllabus.';
 
 /**
+ * Extracts a human-friendly course title from URL slugs (e.g., Udemy /course/slug-name/)
+ * Serves as an intelligent fallback suggestion when external requests are gated by Cloudflare
+ * @param {string} rawUrl - Target URL
+ * @returns {string} Clean title-cased slug string
+ */
+export function extractSlugTitle(rawUrl) {
+  try {
+    const parsed = new URL(rawUrl);
+    const parts = parsed.pathname.split('/').filter(Boolean);
+    // Udemy: /course/slug-name/
+    if (parts.length >= 2 && parts[0] === 'course') {
+      const slug = parts[1];
+      return slug
+        .replace(/[-_]+/g, ' ')
+        .replace(/\b\w/g, (c) => c.toUpperCase())
+        .trim();
+    }
+    // Generic fallback for last slug segment
+    if (parts.length >= 1) {
+      const last = parts[parts.length - 1];
+      if (last.length > 3) {
+        return last
+          .replace(/[-_]+/g, ' ')
+          .replace(/\b\w/g, (c) => c.toUpperCase())
+          .trim();
+      }
+    }
+  } catch {
+    // Ignore URL parse errors
+  }
+  return '';
+}
+
+/**
  * Validates external URL for safety and SSRF prevention
  * @param {string} rawUrl - User-supplied URL string
  * @returns {{ valid: boolean, error?: string, parsedUrl?: URL, sourceType?: string }}
@@ -279,7 +313,8 @@ export async function extractCourseMetadata(rawUrl) {
         partialData: {
           sourceUrl: targetUrl,
           sourceType,
-          title: ''
+          title: '',
+          suggestedTitle: extractSlugTitle(targetUrl)
         }
       };
     }
@@ -294,7 +329,8 @@ export async function extractCourseMetadata(rawUrl) {
         partialData: {
           sourceUrl: targetUrl,
           sourceType,
-          title: ''
+          title: '',
+          suggestedTitle: extractSlugTitle(targetUrl)
         }
       };
     }
@@ -314,7 +350,8 @@ export async function extractCourseMetadata(rawUrl) {
         partialData: {
           sourceUrl: targetUrl,
           sourceType,
-          title: ''
+          title: '',
+          suggestedTitle: extractSlugTitle(targetUrl)
         }
       };
     }

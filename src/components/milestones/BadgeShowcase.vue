@@ -72,15 +72,12 @@
                 {{ badge.natureSymbol }}
               </div>
 
-              <v-chip
-                size="x-small"
-                :color="badge.unlocked ? 'success' : 'surface'"
-                :variant="badge.unlocked ? 'tonal' : 'outlined'"
-                class="mt-2 font-weight-medium"
+              <div
+                :class="['badge-status-pill font-weight-bold', badge.unlocked ? 'status-unlocked' : 'status-locked']"
               >
-                <v-icon v-if="badge.unlocked" icon="mdi-check" start size="10" />
-                {{ badge.unlocked ? 'Unlocked' : (badge.thresholdPct ? `${badge.thresholdPct}%` : '1st Step') }}
-              </v-chip>
+                <v-icon v-if="badge.unlocked" icon="mdi-check" size="11" class="me-1" />
+                <span>{{ badge.unlocked ? 'Unlocked' : (badge.thresholdPct ? `${badge.thresholdPct}%` : '1st Step') }}</span>
+              </div>
             </v-sheet>
           </template>
           <div class="text-center py-0.5">
@@ -133,6 +130,29 @@ const motivation = computed(() => {
 .border-locked-badge {
   border: 1px solid var(--color-border) !important;
   opacity: 0.85;
+}
+
+.badge-status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6875rem;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  margin-top: 8px;
+  line-height: 1.2;
+}
+
+.status-unlocked {
+  background-color: rgba(63, 128, 97, 0.15) !important;
+  color: #265B43 !important;
+  border: 1px solid rgba(63, 128, 97, 0.35) !important;
+}
+
+.status-locked {
+  background-color: #F1EBDD !important;
+  color: #29251F !important;
+  border: 1px solid #E7DED0 !important;
 }
 
 .transition-all {

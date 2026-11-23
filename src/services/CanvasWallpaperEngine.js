@@ -203,8 +203,12 @@ export class CanvasWallpaperEngine {
       const theme = getTheme(themeId);
       const palette = theme.palette;
 
-      // 4. Draw Procedural Nature Background
-      theme.drawBackground(ctx, dim.width, dim.height, dim.orientation);
+      // 4. Draw Background: Custom Uploaded Photo or Procedural Theme
+      if (goal?.customImageUrl || goal?.customImage) {
+        await this.drawCustomImageBackground(ctx, dim.width, dim.height, goal.customImageUrl || goal.customImage, theme);
+      } else {
+        theme.drawBackground(ctx, dim.width, dim.height, dim.orientation);
+      }
 
       // 5. Extract Progress and Milestone State
       const milestones = goal?.milestones || [];
@@ -266,6 +270,48 @@ export class CanvasWallpaperEngine {
     } catch (err) {
       return { success: false, width: 0, height: 0, error: err.message };
     }
+  }
+
+  /**
+   * Renders a user-uploaded custom photo background with high-quality cover scaling
+   * and a dark atmospheric scrim so all goal overlays, milestones, countdown, and luxury badges remain 100% legible.
+   */
+  static async drawCustomImageBackground(ctx, width, height, imageUrl, fallbackTheme) {
+    try {
+      const img = await this.loadImage(imageUrl);
+      const hRatio = width / img.width;
+      const vRatio = height / img.height;
+      const ratio = Math.max(hRatio, vRatio);
+      const centerShiftX = (width - img.width * ratio) / 2;
+      const centerShiftY = (height - img.height * ratio) / 2;
+      ctx.drawImage(img, 0, 0, img.width, img.height, centerShiftX, centerShiftY, img.width * ratio, img.height * ratio);
+
+      // Atmospheric luxury scrim to guarantee text, countdown, and badge contrast
+      const scrim = ctx.createLinearGradient(0, 0, 0, height);
+      scrim.addColorStop(0, 'rgba(11, 15, 25, 0.65)');
+      scrim.addColorStop(0.35, 'rgba(11, 15, 25, 0.40)');
+      scrim.addColorStop(0.70, 'rgba(11, 15, 25, 0.55)');
+      scrim.addColorStop(1, 'rgba(11, 15, 25, 0.85)');
+      ctx.fillStyle = scrim;
+      ctx.fillRect(0, 0, width, height);
+    } catch {
+      if (fallbackTheme) {
+        fallbackTheme.drawBackground(ctx, width, height);
+      }
+    }
+  }
+
+  static loadImage(src) {
+    return new Promise((resolve, reject) => {
+      if (typeof Image === 'undefined') {
+        return resolve({ width: 1000, height: 1000 });
+      }
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => resolve(img);
+      img.onerror = (e) => reject(e);
+      img.src = src;
+    });
   }
 
   /**

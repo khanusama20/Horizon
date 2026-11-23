@@ -161,6 +161,20 @@ async function handleExport() {
         color: 'success'
       };
       emit('export-success', result);
+
+      // Auto-drop temporary custom photo from directory upon wallpaper download
+      if (props.goal?.customImageFilename) {
+        try {
+          fetch('/api/wallpaper/cleanup-temp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filename: props.goal.customImageFilename })
+          }).catch(() => {});
+          props.goal.customImageFilename = null;
+        } catch {
+          // ignore
+        }
+      }
     } else {
       snackbar.value = {
         show: true,

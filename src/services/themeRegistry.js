@@ -386,6 +386,113 @@ export const THEME_REGISTRY = {
 };
 
 /**
+ * 8 Curated Luxury Minimalist Color Themes (Point 6: 5 to 10 options only)
+ * Elegant solid/duo-tone color palettes for high-focus distraction-free wallpapers
+ */
+export const ELEGANT_COLORS = [
+  {
+    id: 'color-obsidian',
+    name: 'Midnight Obsidian',
+    category: 'Curated Colors',
+    colors: ['#0B0F19', '#1E293B'],
+    description: 'Deep luxury slate black with soft atmospheric ambient depth.',
+    accent: '#E97824'
+  },
+  {
+    id: 'color-emerald',
+    name: 'Imperial Emerald',
+    category: 'Curated Colors',
+    colors: ['#022C22', '#064E3B'],
+    description: 'Deep royal forest velvet with rich jewel-toned depth.',
+    accent: '#10B981'
+  },
+  {
+    id: 'color-sapphire',
+    name: 'Deep Sapphire',
+    category: 'Curated Colors',
+    colors: ['#082F49', '#0C4A6E'],
+    description: 'Moody celestial navy blue with clean architectural contrast.',
+    accent: '#38BDF8'
+  },
+  {
+    id: 'color-burgundy',
+    name: 'Burgundy Velvet',
+    category: 'Curated Colors',
+    colors: ['#3B0718', '#831843'],
+    description: 'Regal dark wine with subtle rose-gold ambient lighting.',
+    accent: '#FB7185'
+  },
+  {
+    id: 'color-amber',
+    name: 'Sunset Amber',
+    category: 'Curated Colors',
+    colors: ['#451A03', '#9A3412'],
+    description: 'Warm burnished copper and glowing horizon amber.',
+    accent: '#F59E0B'
+  },
+  {
+    id: 'color-espresso',
+    name: 'Warm Espresso',
+    category: 'Curated Colors',
+    colors: ['#1B1814', '#3E342B'],
+    description: 'Dark roasted coffee bean and warm brushed bronze.',
+    accent: '#FCE8D8'
+  },
+  {
+    id: 'color-slate',
+    name: 'Nordic Slate',
+    category: 'Curated Colors',
+    colors: ['#18202F', '#334155'],
+    description: 'Cool architectural graphite with clean, understated luxury.',
+    accent: '#94A3B8'
+  },
+  {
+    id: 'color-amethyst',
+    name: 'Royal Amethyst',
+    category: 'Curated Colors',
+    colors: ['#2E1065', '#581C87'],
+    description: 'Majestic deep violet with subtle starlight illumination.',
+    accent: '#C084FC'
+  }
+];
+
+// Dynamically register each curated color into THEME_REGISTRY
+ELEGANT_COLORS.forEach(c => {
+  THEME_REGISTRY[c.id] = {
+    id: c.id,
+    name: c.name,
+    category: c.category,
+    description: c.description,
+    isColorTheme: true,
+    palette: {
+      primaryText: '#F8FAFC',
+      secondaryText: '#CBD5E1',
+      accentColor: c.accent,
+      progressFill: c.accent,
+      progressTrack: 'rgba(255, 255, 255, 0.14)',
+      cardBackground: 'rgba(15, 23, 42, 0.68)',
+      cardBorder: 'rgba(255, 255, 255, 0.15)',
+      badgeGlow: 'rgba(255, 255, 255, 0.15)',
+      previewGradient: c.colors
+    },
+    drawBackground(ctx, width, height) {
+      const grad = ctx.createLinearGradient(0, 0, 0, height);
+      grad.addColorStop(0, c.colors[0]);
+      grad.addColorStop(1, c.colors[1]);
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, width, height);
+
+      // Subtle atmospheric vignette
+      const vignette = ctx.createRadialGradient(width / 2, height / 2, width * 0.15, width / 2, height / 2, width * 0.85);
+      vignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
+      vignette.addColorStop(1, 'rgba(0, 0, 0, 0.38)');
+      ctx.fillStyle = vignette;
+      ctx.fillRect(0, 0, width, height);
+    }
+  };
+});
+
+/**
  * Retrieves a registered theme by ID, falling back to 'alpine-peak'
  * @param {string} themeId - Theme identifier
  * @returns {object} Theme definition
@@ -395,9 +502,17 @@ export function getTheme(themeId) {
 }
 
 /**
- * Returns array of all available themes for UI selection
+ * Returns array of all available nature procedural themes for UI selection
  * @returns {Array<object>}
  */
 export function getAllThemes() {
-  return Object.values(THEME_REGISTRY);
+  return Object.values(THEME_REGISTRY).filter(t => !t.isColorTheme);
+}
+
+/**
+ * Returns array of all curated elegant color themes (8 options)
+ * @returns {Array<object>}
+ */
+export function getAllColorThemes() {
+  return Object.values(THEME_REGISTRY).filter(t => t.isColorTheme);
 }

@@ -5,10 +5,17 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:local": "vite",
+    "dev:ip": "vite --host 0.0.0.0",
     "server": "node server/index.js",
+    "server:local": "node server/index.js",
+    "server:ip": "node server/index.js --ip",
     "dev:all": "concurrently -n \"VITE,API\" -c \"cyan,magenta\" \"vite\" \"node server/index.js\"",
+    "dev:all:local": "concurrently -n \"VITE,API\" -c \"cyan,magenta\" \"vite\" \"node server/index.js\"",
+    "dev:all:ip": "concurrently -n \"VITE,API\" -c \"cyan,magenta\" \"vite --host 0.0.0.0\" \"node server/index.js --ip\"",
     "build": "vite build",
     "preview": "vite preview",
+    "test": "vitest run",
     "test:unit": "vitest run",
     "test:watch": "vitest"
   },

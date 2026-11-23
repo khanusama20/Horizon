@@ -90,9 +90,10 @@
               :milestones="goal.milestones || []"
             />
 
-            <!-- 6. Nature Themes Selector -->
+            <!-- 6. Wallpaper Aesthetics & Background Selector -->
             <ThemeSelector
               v-model="goal.templateId"
+              :goal="goal"
             />
 
             <!-- 7. Dedicated Mobile Wallpaper Preview Launcher Card -->
