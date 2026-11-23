@@ -12,8 +12,10 @@ import { calculateProgress } from './milestoneEngine.js';
 import { evaluateBadges, getMotivationalQuote } from './badgeEngine.js';
 
 export const CANVAS_DIMENSIONS = {
-  MOBILE: { width: 1080, height: 1920, orientation: 'mobile' },
-  DESKTOP: { width: 1920, height: 1080, orientation: 'desktop' }
+  MOBILE: { width: 1080, height: 1920, orientation: 'mobile', label: 'Standard Mobile (1080×1920, 9:16)' },
+  MOTOROLA_EDGE: { width: 1080, height: 2400, orientation: 'mobile', label: 'Motorola Edge 50 Fusion (1080×2400, 9:20)' },
+  MOBILE_COMPACT: { width: 720, height: 1600, orientation: 'mobile', label: 'Compact Mobile (720×1600, 9:20)' },
+  DESKTOP: { width: 1920, height: 1080, orientation: 'desktop', label: 'Desktop Full HD (1920×1080, 16:9)' }
 };
 
 export const SAFE_ZONES = {
@@ -29,6 +31,24 @@ export const SAFE_ZONES = {
     contentTop: 280,
     contentBottom: 1720,
     contentHeight: 1440
+  },
+  MOTOROLA_EDGE: {
+    topReserved: 300,
+    topSafePct: 0.15,
+    bottomReserved: 160,
+    sideMargin: 70,
+    contentTop: 300,
+    contentBottom: 2240,
+    contentHeight: 1940
+  },
+  MOBILE_COMPACT: {
+    topReserved: 200,
+    topSafePct: 0.15,
+    bottomReserved: 120,
+    sideMargin: 50,
+    contentTop: 200,
+    contentBottom: 1480,
+    contentHeight: 1280
   },
   DESKTOP: {
     topReserved: 80, // Menu bar
@@ -429,8 +449,23 @@ export class CanvasWallpaperEngine {
       // 1. Wait for web fonts to avoid font baseline shift
       await this.waitForFonts();
 
-      const dim = (preset === 'DESKTOP') ? CANVAS_DIMENSIONS.DESKTOP : CANVAS_DIMENSIONS.MOBILE;
-      const safeZone = (preset === 'DESKTOP') ? SAFE_ZONES.DESKTOP : SAFE_ZONES.MOBILE;
+      let dim;
+      let safeZone;
+      const upperPreset = String(preset || 'MOBILE').toUpperCase();
+
+      if (upperPreset === 'DESKTOP') {
+        dim = CANVAS_DIMENSIONS.DESKTOP;
+        safeZone = SAFE_ZONES.DESKTOP;
+      } else if (upperPreset === 'MOTOROLA_EDGE' || upperPreset === 'EDGE_50_FUSION' || upperPreset === 'MOBILE_TALL') {
+        dim = CANVAS_DIMENSIONS.MOTOROLA_EDGE;
+        safeZone = SAFE_ZONES.MOTOROLA_EDGE || SAFE_ZONES.MOBILE;
+      } else if (upperPreset === 'MOBILE_COMPACT') {
+        dim = CANVAS_DIMENSIONS.MOBILE_COMPACT;
+        safeZone = SAFE_ZONES.MOBILE_COMPACT || SAFE_ZONES.MOBILE;
+      } else {
+        dim = CANVAS_DIMENSIONS.MOBILE;
+        safeZone = SAFE_ZONES.MOBILE;
+      }
 
       // 2. Set Canvas dimensions strictly
       canvas.width = dim.width;
@@ -915,360 +950,636 @@ export class CanvasWallpaperEngine {
   }
 
   /**
-   * Layout Renderer: Mobile Lock-Screen (1080x1920)
+   * Calculates dynamic countdown metrics from goal targetDate and current date
+   * @param {object} goal
+   * @returns {{ status: 'FUTURE'|'TODAY'|'OVERDUE'|'NO_DEADLINE', daysRemaining: number, headline: string, label: string, sublabel: string }}
+   */
+  static calculateCountdown(goal) {
+    const title = goal?.title || 'Achievement Countdown Goal';
+    const sublabel = `Until Your ${title} Milestone`;
+
+    if (!goal?.targetDate) {
+      const days = goal?.totalDays || 15;
+      return {
+        status: 'NO_DEADLINE',
+        daysRemaining: days,
+        headline: `${days} DAYS LEFT`,
+        label: `${days} DAYS SPRINT`,
+        sublabel
+      };
+    }
+
+    try {
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      const target = new Date(goal.targetDate);
+      target.setHours(0, 0, 0, 0);
+      const diffDays = Math.round((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+      if (diffDays > 0) {
+        return {
+          status: 'FUTURE',
+          daysRemaining: diffDays,
+          headline: diffDays === 1 ? '1 DAY LEFT' : `${diffDays} DAYS LEFT`,
+          label: `${diffDays} DAYS REMAINING`,
+          sublabel
+        };
+      } else if (diffDays === 0) {
+        return {
+          status: 'TODAY',
+          daysRemaining: 0,
+          headline: 'DUE TODAY',
+          label: 'DEADLINE TODAY',
+          sublabel
+        };
+      } else {
+        const overdueDays = Math.abs(diffDays);
+        return {
+          status: 'OVERDUE',
+          daysRemaining: diffDays,
+          headline: overdueDays === 1 ? '1 DAY OVERDUE' : `${overdueDays} DAYS OVERDUE`,
+          label: 'OVERDUE',
+          sublabel: `${sublabel} (Action Needed)`
+        };
+      }
+    } catch {
+      const days = goal?.totalDays || 15;
+      return {
+        status: 'NO_DEADLINE',
+        daysRemaining: days,
+        headline: `${days} DAYS LEFT`,
+        label: `${days} DAYS SPRINT`,
+        sublabel
+      };
+    }
+  }
+
+  /**
+   * Draws an elegant vector hourglass / focus icon
+   */
+  static drawHourglassIcon(ctx, cx, cy, size, color) {
+    ctx.save();
+    ctx.strokeStyle = color || '#F59E0B';
+    ctx.fillStyle = color || '#F59E0B';
+    ctx.lineWidth = Math.max(1.8, size * 0.08);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    const half = size / 2;
+    const topY = cy - half;
+    const bottomY = cy + half;
+    const leftX = cx - half;
+    const rightX = cx + half;
+
+    // Top horizontal cap
+    ctx.beginPath();
+    ctx.moveTo(leftX, topY);
+    ctx.lineTo(rightX, topY);
+    ctx.stroke();
+
+    // Bottom horizontal cap
+    ctx.beginPath();
+    ctx.moveTo(leftX, bottomY);
+    ctx.lineTo(rightX, bottomY);
+    ctx.stroke();
+
+    // Hourglass bulb curves
+    ctx.beginPath();
+    ctx.moveTo(leftX + 2, topY);
+    ctx.quadraticCurveTo(leftX + 2, cy - 2, cx, cy);
+    ctx.quadraticCurveTo(rightX - 2, cy + 2, rightX - 2, bottomY);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(rightX - 2, topY);
+    ctx.quadraticCurveTo(rightX - 2, cy - 2, cx, cy);
+    ctx.quadraticCurveTo(leftX + 2, cy + 2, leftX + 2, bottomY);
+    ctx.stroke();
+
+    // Sand grains in bottom bulb
+    ctx.beginPath();
+    ctx.moveTo(cx - half * 0.4, bottomY - 3);
+    ctx.lineTo(cx + half * 0.4, bottomY - 3);
+    ctx.lineTo(cx, cy + half * 0.25);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  /**
+   * Draws a delicate hairline flourish divider with center diamond star
+   */
+  static drawFlourishDivider(ctx, cx, cy, width, color) {
+    ctx.save();
+    ctx.strokeStyle = color || '#F59E0B';
+    ctx.fillStyle = color || '#F59E0B';
+    ctx.lineWidth = 1;
+
+    const halfW = width / 2;
+    const gap = 16;
+
+    // Left hairline
+    ctx.beginPath();
+    ctx.moveTo(cx - halfW, cy);
+    ctx.lineTo(cx - gap, cy);
+    ctx.stroke();
+
+    // Right hairline
+    ctx.beginPath();
+    ctx.moveTo(cx + gap, cy);
+    ctx.lineTo(cx + halfW, cy);
+    ctx.stroke();
+
+    // Center 4-point diamond star
+    const starR = 5;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - starR);
+    ctx.lineTo(cx + starR * 0.6, cy);
+    ctx.lineTo(cx, cy + starR);
+    ctx.lineTo(cx - starR * 0.6, cy);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  /**
+   * Intelligently selects the most relevant window of milestones to display
+   * prioritising the active (in-progress) milestone and its immediate predecessors and successors
+   * @param {Array} milestones
+   * @param {number} maxCount
+   * @returns {Array}
+   */
+  static selectVisibleMilestones(milestones, maxCount = 4) {
+    if (!milestones || milestones.length <= maxCount) {
+      return milestones || [];
+    }
+
+    const activeIdx = milestones.findIndex(m => m.status !== 'completed' && !m.completed);
+    if (activeIdx === -1) {
+      // All completed -> show the last maxCount milestones
+      return milestones.slice(-maxCount);
+    }
+
+    // Center window around activeIdx: e.g. 1 completed before, active, and remaining upcoming
+    let start = Math.max(0, activeIdx - 1);
+    let end = start + maxCount;
+    if (end > milestones.length) {
+      end = milestones.length;
+      start = Math.max(0, end - maxCount);
+    }
+
+    return milestones.slice(start, end);
+  }
+
+  /**
+   * Draws a visually attractive signboard / timeline station for a milestone
+   */
+  static drawMilestoneSignboard(ctx, x, y, width, height, milestone, status, palette, scale) {
+    const nodeRadius = Math.round(14 * scale);
+    const nodeX = x + Math.round(24 * scale);
+    const nodeY = y + (height / 2);
+    const fontPrimary = "'Roboto', -apple-system, BlinkMacSystemFont, system-ui, sans-serif";
+
+    // 1. Draw Circular Status Node
+    if (status === 'completed') {
+      // Emerald Green Checkmark Disc
+      ctx.beginPath();
+      ctx.arc(nodeX, nodeY, nodeRadius, 0, Math.PI * 2);
+      ctx.fillStyle = '#10B981';
+      ctx.fill();
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Checkmark icon
+      ctx.font = `800 ${Math.round(14 * scale)}px ${fontPrimary}`;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('✓', nodeX, nodeY);
+    } else if (status === 'current') {
+      // Glowing Amber In-Progress Disc
+      ctx.beginPath();
+      ctx.arc(nodeX, nodeY, nodeRadius + Math.round(4 * scale), 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(245, 158, 11, 0.35)';
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(nodeX, nodeY, nodeRadius, 0, Math.PI * 2);
+      ctx.fillStyle = '#F59E0B';
+      ctx.fill();
+      ctx.strokeStyle = '#FFFBEB';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Target center dot
+      ctx.beginPath();
+      ctx.arc(nodeX, nodeY, Math.round(4 * scale), 0, Math.PI * 2);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fill();
+    } else {
+      // Neutral Outlined Ring
+      ctx.beginPath();
+      ctx.arc(nodeX, nodeY, nodeRadius, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+      ctx.lineWidth = 1.8;
+      ctx.stroke();
+    }
+
+    // 2. Draw Signboard Plaque Card (Right of Node)
+    const plaqueLeft = nodeX + nodeRadius + Math.round(16 * scale);
+    const plaqueWidth = width - (plaqueLeft - x);
+
+    ctx.save();
+    if (status === 'current') {
+      // Elevated Active Plaque with Amber Rim
+      ctx.fillStyle = 'rgba(245, 158, 11, 0.12)';
+      this.drawRoundedRect(ctx, plaqueLeft, y, plaqueWidth, height, Math.round(14 * scale));
+      ctx.fill();
+      ctx.strokeStyle = palette.accentColor || '#F59E0B';
+      ctx.lineWidth = 1.8;
+      ctx.stroke();
+    } else if (status === 'completed') {
+      // Completed Plaque
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+      this.drawRoundedRect(ctx, plaqueLeft, y, plaqueWidth, height, Math.round(12 * scale));
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(16, 185, 129, 0.28)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    } else {
+      // Pending Plaque
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
+      this.drawRoundedRect(ctx, plaqueLeft, y, plaqueWidth, height, Math.round(12 * scale));
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // 3. Plaque Text & Tag
+    const innerPadX = Math.round(16 * scale);
+    const textStartX = plaqueLeft + innerPadX;
+    const textMaxWidth = plaqueWidth - (innerPadX * 2);
+
+    // Pill Tag & Day Header
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    const tagY = y + Math.round(12 * scale);
+
+    if (status === 'completed') {
+      ctx.font = `700 ${Math.round(12 * scale)}px ${fontPrimary}`;
+      ctx.fillStyle = '#10B981';
+      ctx.fillText('COMPLETED', textStartX, tagY);
+    } else if (status === 'current') {
+      ctx.font = `800 ${Math.round(12 * scale)}px ${fontPrimary}`;
+      ctx.fillStyle = palette.accentColor || '#F59E0B';
+      ctx.fillText('IN PROGRESS • CURRENT FOCUS', textStartX, tagY);
+    } else {
+      ctx.font = `600 ${Math.round(12 * scale)}px ${fontPrimary}`;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+      ctx.fillText('UPCOMING', textStartX, tagY);
+    }
+
+    // Target Day / Date on right of tag
+    const dayStr = milestone.targetDay ? `Day ${milestone.targetDay}` : (milestone.order ? `Milestone #${milestone.order}` : '');
+    const dateStr = milestone.dueDate ? new Date(milestone.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '';
+    const metaStr = [dayStr, dateStr].filter(Boolean).join(' • ');
+
+    if (metaStr) {
+      ctx.textAlign = 'right';
+      ctx.font = `500 ${Math.round(12 * scale)}px ${fontPrimary}`;
+      ctx.fillStyle = status === 'current' ? (palette.accentColor || '#F59E0B') : 'rgba(255, 255, 255, 0.55)';
+      ctx.fillText(metaStr, plaqueLeft + plaqueWidth - innerPadX, tagY);
+    }
+
+    // Milestone Title
+    ctx.textAlign = 'left';
+    const titleY = tagY + Math.round(18 * scale);
+    const titleFontSize = status === 'current' ? Math.round(20 * scale) : Math.round(17 * scale);
+    const titleWeight = status === 'current' ? '800' : '600';
+    ctx.font = `${titleWeight} ${titleFontSize}px ${fontPrimary}`;
+    ctx.fillStyle = status === 'completed'
+      ? 'rgba(255, 255, 255, 0.90)'
+      : (status === 'current' ? '#FFFFFF' : 'rgba(255, 255, 255, 0.70)');
+
+    let mTitle = milestone.title || `Milestone #${milestone.order || 1}`;
+    while (ctx.measureText(mTitle).width > textMaxWidth && mTitle.length > 10) {
+      mTitle = mTitle.slice(0, -1).trim();
+    }
+    if (mTitle.length < (milestone.title || '').length) mTitle += '...';
+    ctx.fillText(mTitle, textStartX, titleY);
+
+    ctx.restore();
+  }
+
+  /**
+   * Layout Renderer: Premium Motivational Nature Wallpaper (Mobile: 9:16, 9:20 Motorola Edge 50, compact)
    * 
-   * Strict adherence to Mobile Lock-Screen Safe Zones with Rich Analytics HUD Scaling:
-   * - Top 0–23% (0 - 440px): Kept empty for OS Clock, Dynamic Island, and Notifications
-   * - Main content 23–85% (440 - 1630px): Scaled Goal header, Progress & Analytics Cockpit,
-   *   Milestone Roadmap with Current Focus card, and 5 Luxury Gold Achievement Medallions
-   * - Footer 85–96% (1640 - 1840px): Inspiring motivational quote and Horizon Branding
-   * - Horizontal margins: 60px (960px content width) for optimal phone display readability
+   * Composition Structure:
+   * - Section A: Motivational Header ("Keep Going!", script font, supporting line, flourish divider)
+   * - Section B: Days Remaining Countdown ("15 DAYS LEFT", vector hourglass, goal title)
+   * - Section C: Course Progress Card (Translucent glass card, circular progress, "Course Progress", count, highest badge)
+   * - Section D: Milestone Journey Tracker (Vertical connected timeline track with signboard station design)
+   * - Section E: Motivational Footer (Progress-based quote, hallmark branding)
    */
   static renderMobileLayout(ctx, width, height, safeZone, data) {
     const { goal, palette, daysRemaining, progressPct, activeMilestone, upcomingMilestone, badges, motivation } = data;
     const fontPrimary = "'Roboto', -apple-system, BlinkMacSystemFont, system-ui, sans-serif";
+    const fontSerif = "'Caveat', 'Playfair Display', 'Georgia', cursive, serif, sans-serif";
 
-    // Horizontal padding: 60px padding for wide 960px reading area on 1080w
-    const contentLeft = 60;
-    const contentWidth = width - (contentLeft * 2); // 960px
+    const scale = Math.min(width / 1080, 1.2);
+    const verticalRatio = height / 1920; // 1.0 for 1080x1920, 1.25 for 1080x2400 (Motorola Edge 50 Fusion!)
 
-    // Content starts at 440px to safely clear the OS clock while eliminating the bottom void!
-    let cursorY = Math.round(height * 0.23); // ~442px
+    const paddingX = Math.round(width * 0.065);
+    const contentLeft = paddingX;
+    const contentWidth = width - (paddingX * 2);
+    const contentCenterX = width / 2;
 
-    // --- Block 1: Goal Header (Category Pill, Title with Auto-Fit, Duration) ---
-    const category = (goal?.category || (goal?.sourceType ? `${goal.sourceType} Course` : 'Learning')).toUpperCase();
-    ctx.font = `700 18px ${fontPrimary}`;
-    const catMetrics = ctx.measureText(category);
-    const pillW = catMetrics.width + 32;
-    const pillH = 38;
+    // Top start: comfortably clear the OS clock & camera notch (0-13% to 0-14%)
+    let cursorY = Math.max(safeZone.topReserved || 260, Math.round(height * 0.13));
 
-    ctx.fillStyle = palette.cardBackground || 'rgba(15, 23, 42, 0.78)';
-    this.drawRoundedRect(ctx, contentLeft, cursorY, pillW, pillH, 19);
-    ctx.fill();
-    ctx.strokeStyle = palette.accentColor || '#F59E0B';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-
-    ctx.fillStyle = palette.accentColor || '#F59E0B';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(category, contentLeft + 16, cursorY + (pillH / 2));
-
-    // Optional Duration Subtitle on right of pill
-    if (goal?.totalDays) {
-      ctx.textAlign = 'right';
-      ctx.font = `600 18px ${fontPrimary}`;
-      ctx.fillStyle = palette.secondaryText;
-      ctx.fillText(`${goal.totalDays}-Day Sprint`, contentLeft + contentWidth, cursorY + (pillH / 2));
-    }
-
-    cursorY += pillH + 18;
-
-    // Goal Title with auto-fit, wrapping (Max 2 lines), and shadow for contrast
-    ctx.save();
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
-    ctx.shadowBlur = 10;
-    ctx.shadowOffsetY = 3;
-    ctx.fillStyle = palette.primaryText;
-    ctx.textAlign = 'left';
+    // ========================================================
+    // SECTION A: MOTIVATIONAL HEADER
+    // ========================================================
+    ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
-    const goalTitle = goal?.title || 'Achievement Countdown Goal';
-    cursorY = this.fitAndWrapText(ctx, goalTitle, contentLeft, cursorY, contentWidth, 50, 36, fontPrimary, 2, '800');
+
+    // Flourish Top Divider
+    this.drawFlourishDivider(ctx, contentCenterX, cursorY, Math.min(contentWidth * 0.45, 360), palette.accentColor || '#F59E0B');
+    cursorY += Math.round(14 * scale);
+
+    // Script / Display Heading: "Keep Going!"
+    ctx.font = `italic 700 ${Math.round(42 * scale)}px ${fontSerif}`;
+    ctx.fillStyle = '#FEF3C7'; // Warm champagne gold
+    ctx.fillText('Keep Going!', contentCenterX, cursorY);
+    cursorY += Math.round(48 * scale);
+
+    // Supporting Tagline: "Big dreams are built one lesson at a time."
+    ctx.font = `500 ${Math.round(19 * scale)}px ${fontPrimary}`;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.88)';
+    ctx.fillText('Big dreams are built one lesson at a time.', contentCenterX, cursorY);
+    cursorY += Math.round(36 * scale);
+
+    // Flourish Bottom Divider
+    this.drawFlourishDivider(ctx, contentCenterX, cursorY, Math.min(contentWidth * 0.35, 280), 'rgba(255, 255, 255, 0.35)');
+    cursorY += Math.round(28 * Math.min(verticalRatio, 1.25));
+
+    // ========================================================
+    // SECTION B: DAYS REMAINING COUNTDOWN (MAJOR DESIGN ELEMENT)
+    // ========================================================
+    const countdown = this.calculateCountdown(goal);
+
+    // Countdown Number & Label: e.g. "15 DAYS LEFT" or "DUE TODAY"
+    ctx.save();
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.75)';
+    ctx.shadowBlur = 14;
+    ctx.shadowOffsetY = 4;
+
+    // Draw Vector Hourglass Icon next to countdown
+    const iconSize = Math.round(28 * scale);
+    const iconY = cursorY + Math.round(14 * scale);
+    this.drawHourglassIcon(ctx, contentCenterX - Math.round(240 * scale), iconY, iconSize, palette.accentColor || '#F59E0B');
+
+    ctx.font = `900 ${Math.round(72 * scale)}px ${fontPrimary}`;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(countdown.headline, contentCenterX, cursorY);
     ctx.restore();
 
-    cursorY += 20;
+    cursorY += Math.round(78 * scale);
 
-    // --- Block 2: Progress & Analytics Hero Card (Cockpit HUD) ---
-    const heroCardH = 290;
-    ctx.fillStyle = palette.cardBackground || 'rgba(15, 23, 42, 0.78)';
-    this.drawRoundedRect(ctx, contentLeft, cursorY, contentWidth, heroCardH, 24);
+    // Subtitle: "Until Your [Goal Title] Milestone"
+    ctx.font = `600 ${Math.round(22 * scale)}px ${fontPrimary}`;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+    ctx.textAlign = 'center';
+    cursorY = this.fitAndWrapText(ctx, countdown.sublabel, contentCenterX, cursorY, contentWidth * 0.9, Math.round(22 * scale), Math.round(16 * scale), fontPrimary, 2, '600');
+
+    cursorY += Math.round(32 * Math.min(verticalRatio, 1.25));
+
+    // ========================================================
+    // SECTION C: COURSE PROGRESS CARD
+    // ========================================================
+    const progressCardH = Math.round(195 * Math.min(verticalRatio, 1.2));
+    ctx.fillStyle = palette.cardBackground || 'rgba(15, 23, 42, 0.65)';
+    this.drawRoundedRect(ctx, contentLeft, cursorY, contentWidth, progressCardH, Math.round(22 * scale));
     ctx.fill();
-    ctx.strokeStyle = palette.cardBorder || 'rgba(255, 255, 255, 0.16)';
+    ctx.strokeStyle = palette.cardBorder || 'rgba(255, 255, 255, 0.18)';
     ctx.lineWidth = 1.5;
     ctx.stroke();
 
-    // Circular Progress Arc (Left Column in Hero Card)
-    const ringRadius = 88;
-    const ringCx = contentLeft + 125;
-    const ringCy = cursorY + (heroCardH / 2);
+    // Circular Progress Ring (Left Side)
+    const ringRadius = Math.round(62 * scale);
+    const ringCx = contentLeft + Math.round(100 * scale);
+    const ringCy = cursorY + (progressCardH / 2);
 
-    this.drawProgressRing(ctx, ringCx, ringCy, ringRadius, 16, progressPct, palette.progressFill, palette.progressTrack);
+    this.drawProgressRing(ctx, ringCx, ringCy, ringRadius, Math.round(13 * scale), progressPct, palette.progressFill || palette.accentColor || '#F59E0B', palette.progressTrack || 'rgba(255, 255, 255, 0.12)');
 
     // Center Percentage inside Progress Ring
-    ctx.font = `800 46px ${fontPrimary}`;
+    ctx.font = `900 ${Math.round(38 * scale)}px ${fontPrimary}`;
     ctx.fillStyle = palette.primaryText;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(`${progressPct}%`, ringCx, ringCy - 8);
+    ctx.fillText(`${progressPct}%`, ringCx, ringCy - Math.round(6 * scale));
 
-    ctx.font = `800 14px ${fontPrimary}`;
+    ctx.font = `800 ${Math.round(12 * scale)}px ${fontPrimary}`;
     ctx.fillStyle = palette.secondaryText;
-    const statusLabel = progressPct >= 100 ? 'COMPLETED' : (progressPct > 0 ? 'IN PROGRESS' : 'NOT STARTED');
-    ctx.fillText(statusLabel, ringCx, ringCy + 28);
+    const statusText = progressPct >= 100 ? 'COMPLETED' : (progressPct > 0 ? 'IN PROGRESS' : 'NOT STARTED');
+    ctx.fillText(statusText, ringCx, ringCy + Math.round(22 * scale));
 
-    // Countdown & Goal Analytics (Right Column in Hero Card)
-    const countLeft = ringCx + ringRadius + 40;
-    const countTop = cursorY + 32;
+    // Right Side: Category Pill, "Course Progress", Count, Streak, Badge
+    const textLeft = ringCx + ringRadius + Math.round(34 * scale);
+    const textTop = cursorY + Math.round(24 * scale);
 
+    // Category Pill
+    const categoryTag = (goal?.category || (goal?.sourceType ? `${goal.sourceType} Course` : 'Course')).toUpperCase();
+    ctx.font = `700 ${Math.round(13 * scale)}px ${fontPrimary}`;
+    ctx.fillStyle = palette.accentColor || '#F59E0B';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.font = `800 74px ${fontPrimary}`;
+    ctx.fillText(`✦ ${categoryTag}`, textLeft, textTop);
+
+    // Title: "Course Progress"
+    ctx.font = `800 ${Math.round(24 * scale)}px ${fontPrimary}`;
     ctx.fillStyle = palette.primaryText;
-    ctx.fillText(String(daysRemaining), countLeft, countTop);
+    ctx.fillText('Course Progress', textLeft, textTop + Math.round(22 * scale));
 
-    ctx.font = `800 18px ${fontPrimary}`;
-    ctx.fillStyle = palette.accentColor;
-    ctx.fillText('DAYS REMAINING', countLeft, countTop + 76);
-
-    ctx.font = `500 17px ${fontPrimary}`;
-    ctx.fillStyle = palette.secondaryText;
-    const targetLabel = goal?.targetDate
-      ? new Date(goal.targetDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
-      : `Target: ${daysRemaining} days`;
-    ctx.fillText(`Deadline: ${targetLabel}`, countLeft, countTop + 106);
-
-    // Real Analytics Chips
-    const analyticsItems = [];
-    if (goal?.streakDays && goal.streakDays > 0) {
-      analyticsItems.push(`🔥 ${goal.streakDays}d Streak`);
-    }
+    // Completed Days / Milestones count: "6 of 15 Days Complete"
     const milestones = goal?.milestones || [];
     const completedCount = milestones.filter(m => m.status === 'completed' || m.completed === true).length;
-    if (milestones.length > 0) {
-      analyticsItems.push(`✓ ${completedCount}/${milestones.length} Done (${progressPct}%)`);
+    const countLabel = milestones.length > 0
+      ? `${completedCount} of ${milestones.length} Milestones Complete`
+      : `${Math.round((progressPct / 100) * (goal?.totalDays || 15))} of ${goal?.totalDays || 15} Days Complete`;
+
+    ctx.font = `600 ${Math.round(17 * scale)}px ${fontPrimary}`;
+    ctx.fillStyle = palette.secondaryText;
+    ctx.fillText(countLabel, textLeft, textTop + Math.round(54 * scale));
+
+    // Real Analytics Stats & Highest Unlocked Badge
+    const unlockedBadges = (badges || []).filter(b => b.unlocked);
+    const highestBadge = unlockedBadges[unlockedBadges.length - 1];
+
+    const statPills = [];
+    if (highestBadge) {
+      statPills.push(`★ Highest: ${highestBadge.name}`);
+    }
+    if (goal?.streakDays && goal.streakDays > 0) {
+      statPills.push(`🔥 ${goal.streakDays}d Streak`);
     }
     if (goal?.courseMetadata?.durationHours) {
-      analyticsItems.push(`⏱️ ${goal.courseMetadata.durationHours}h`);
+      statPills.push(`⏱️ ${goal.courseMetadata.durationHours}h`);
     }
 
-    if (analyticsItems.length > 0) {
-      ctx.font = `700 15px ${fontPrimary}`;
-      ctx.fillStyle = palette.accentColor;
-      ctx.fillText(analyticsItems.join('   •   '), countLeft, countTop + 144);
+    if (statPills.length > 0) {
+      ctx.font = `700 ${Math.round(14 * scale)}px ${fontPrimary}`;
+      ctx.fillStyle = palette.accentColor || '#F59E0B';
+      ctx.fillText(statPills.join('   •   '), textLeft, textTop + Math.round(86 * scale));
     }
 
-    cursorY += heroCardH + 24;
+    cursorY += progressCardH + Math.round(28 * Math.min(verticalRatio, 1.25));
 
-    // --- Block 3: Milestone Roadmap & Current Focus Card ---
-    const sortedMilestones = [...milestones].sort((a, b) => (a.order || 0) - (b.order || 0));
-    const completedList = sortedMilestones.filter(m => m.status === 'completed' || m.completed === true);
-    const pendingList = sortedMilestones.filter(m => m.status !== 'completed' && !m.completed);
+    // ========================================================
+    // SECTION D: MILESTONE JOURNEY TRACKER (SIGNBOARD TIMELINE)
+    // ========================================================
+    const maxMilestones = height >= 2200 ? 5 : (height >= 1800 ? 4 : 3);
+    const signboardH = height >= 2200 ? Math.round(84 * scale) : Math.round(74 * scale);
+    const signboardGap = Math.round(14 * scale);
 
-    const milestoneCardH = 340;
-    ctx.fillStyle = palette.cardBackground || 'rgba(15, 23, 42, 0.78)';
-    this.drawRoundedRect(ctx, contentLeft, cursorY, contentWidth, milestoneCardH, 22);
-    ctx.fill();
-    ctx.strokeStyle = palette.cardBorder || 'rgba(255, 255, 255, 0.16)';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-
-    // Card Header Row
-    ctx.font = `700 16px ${fontPrimary}`;
-    ctx.fillStyle = palette.accentColor;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.fillText('MILESTONE TRACKER & CURRENT FOCUS', contentLeft + 24, cursorY + 20);
+    ctx.font = `800 ${Math.round(16 * scale)}px ${fontPrimary}`;
+    ctx.fillStyle = palette.accentColor || '#F59E0B';
+    ctx.fillText('MILESTONE JOURNEY TRACKER', contentLeft, cursorY);
 
     ctx.textAlign = 'right';
+    ctx.font = `600 ${Math.round(15 * scale)}px ${fontPrimary}`;
     ctx.fillStyle = palette.secondaryText;
-    ctx.font = `600 16px ${fontPrimary}`;
-    ctx.fillText(`${completedList.length} of ${milestones.length} Completed`, contentLeft + contentWidth - 24, cursorY + 20);
+    ctx.fillText(`${completedCount} of ${milestones.length} Completed`, contentLeft + contentWidth, cursorY);
 
-    let mItemY = cursorY + 54;
+    cursorY += Math.round(28 * scale);
 
-    // Sub-card for Active Focus Milestone
-    if (activeMilestone) {
-      const focusCardH = 136;
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
-      this.drawRoundedRect(ctx, contentLeft + 20, mItemY, contentWidth - 40, focusCardH, 14);
-      ctx.fill();
-      ctx.strokeStyle = palette.accentColor || '#F59E0B';
-      ctx.lineWidth = 1.5;
+    // Select intelligent window of milestones (focusing around active milestone)
+    const sortedMilestones = [...milestones].sort((a, b) => (a.order || 0) - (b.order || 0));
+    const visibleMilestones = this.selectVisibleMilestones(sortedMilestones, maxMilestones);
+
+    // Vertical timeline connecting track
+    if (visibleMilestones.length > 1) {
+      const trackX = contentLeft + Math.round(24 * scale);
+      const trackTopY = cursorY + (signboardH / 2);
+      const trackBottomY = cursorY + ((visibleMilestones.length - 1) * (signboardH + signboardGap)) + (signboardH / 2);
+
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(trackX, trackTopY);
+      ctx.lineTo(trackX, trackBottomY);
       ctx.stroke();
-
-      ctx.textAlign = 'left';
-      ctx.font = `700 14px ${fontPrimary}`;
-      ctx.fillStyle = palette.accentColor;
-      ctx.fillText(`🎯 CURRENT FOCUS • MILESTONE #${activeMilestone.order}`, contentLeft + 36, mItemY + 16);
-
-      ctx.fillStyle = palette.primaryText;
-      let focusTitleY = mItemY + 42;
-      focusTitleY = this.fitAndWrapText(ctx, activeMilestone.title, contentLeft + 36, focusTitleY, contentWidth - 72, 24, 18, fontPrimary, 2, '700');
-
-      ctx.font = `500 14px ${fontPrimary}`;
-      ctx.fillStyle = palette.secondaryText;
-      const targetStr = activeMilestone.targetDay ? `Day ${activeMilestone.targetDay}` : '';
-      const dueStr = activeMilestone.dueDate ? `Target: ${new Date(activeMilestone.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}` : '';
-      const milestoneMeta = [targetStr, dueStr].filter(Boolean).join(' • ');
-      if (milestoneMeta) {
-        ctx.fillText(milestoneMeta, contentLeft + 36, mItemY + focusCardH - 22);
-      }
-
-      mItemY += focusCardH + 18;
     }
 
-    // Upcoming Milestone Row (if any)
-    if (upcomingMilestone) {
-      ctx.textAlign = 'left';
-      ctx.font = `700 15px ${fontPrimary}`;
-      ctx.fillStyle = palette.secondaryText;
-      ctx.fillText('UPCOMING', contentLeft + 24, mItemY);
+    visibleMilestones.forEach((m, idx) => {
+      const rowY = cursorY + (idx * (signboardH + signboardGap));
+      const isCompleted = m.status === 'completed' || m.completed === true;
+      const isActive = !isCompleted && (m.id === activeMilestone?.id || idx === 0 && !completedCount);
+      const status = isCompleted ? 'completed' : (isActive ? 'current' : 'pending');
 
-      ctx.font = `600 17px ${fontPrimary}`;
-      ctx.fillStyle = palette.primaryText;
-      let upTitle = `#${upcomingMilestone.order} ${upcomingMilestone.title}`;
-      while (ctx.measureText(upTitle).width > contentWidth - 140 && upTitle.length > 10) {
-        upTitle = upTitle.slice(0, -1).trim();
-      }
-      if (upTitle.length < `#${upcomingMilestone.order} ${upcomingMilestone.title}`.length) upTitle += '...';
-      ctx.fillText(upTitle, contentLeft + 120, mItemY);
-      mItemY += 32;
-    }
-
-    // Completed milestones summary / overflow
-    if (completedList.length > 0) {
-      const recentCompleted = completedList[completedList.length - 1];
-      ctx.textAlign = 'left';
-      ctx.font = `700 15px ${fontPrimary}`;
-      ctx.fillStyle = '#10B981';
-      ctx.fillText('✓', contentLeft + 24, mItemY);
-
-      ctx.font = `500 16px ${fontPrimary}`;
-      ctx.fillStyle = palette.secondaryText;
-      let compTitle = `Completed: #${recentCompleted.order} ${recentCompleted.title}`;
-      while (ctx.measureText(compTitle).width > contentWidth - 70 && compTitle.length > 10) {
-        compTitle = compTitle.slice(0, -1).trim();
-      }
-      if (compTitle.length < `Completed: #${recentCompleted.order} ${recentCompleted.title}`.length) compTitle += '...';
-      ctx.fillText(compTitle, contentLeft + 48, mItemY);
-      mItemY += 26;
-
-      if (completedList.length > 1) {
-        ctx.font = `italic 600 14px ${fontPrimary}`;
-        ctx.fillStyle = palette.accentColor;
-        ctx.fillText(`+${completedList.length - 1} more completed milestones`, contentLeft + 48, mItemY);
-      }
-    } else if (!upcomingMilestone && pendingList.length > 1) {
-      const nextPending = pendingList[1];
-      ctx.font = `500 15px ${fontPrimary}`;
-      ctx.fillStyle = palette.secondaryText;
-      ctx.fillText(`○ Day ${nextPending.targetDay}: ${nextPending.title.slice(0, 50)}`, contentLeft + 24, mItemY);
-    }
-
-    cursorY += milestoneCardH + 24;
-
-    // --- Block 4: Achievement Badges Strip & Highest Unlocked Tier ---
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'top';
-    ctx.font = `700 18px ${fontPrimary}`;
-    ctx.fillStyle = palette.secondaryText;
-    ctx.fillText('ACHIEVEMENT BADGES', contentLeft, cursorY);
-
-    // Highest Unlocked Badge Label
-    const unlockedBadges = badges.filter(b => b.unlocked);
-    const highestBadge = unlockedBadges[unlockedBadges.length - 1];
-    if (highestBadge) {
-      ctx.textAlign = 'right';
-      ctx.font = `700 16px ${fontPrimary}`;
-      ctx.fillStyle = highestBadge.color || '#F59E0B';
-      ctx.fillText(`★ Highest: ${highestBadge.name}`, contentLeft + contentWidth, cursorY);
-    } else {
-      ctx.textAlign = 'right';
-      ctx.font = `500 15px ${fontPrimary}`;
-      ctx.fillStyle = palette.secondaryText;
-      ctx.fillText('Milestone 1 unlocks First Step', contentLeft + contentWidth, cursorY);
-    }
-
-    cursorY += 34;
-
-    const badgeRadius = 46; // Diameter 92px
-    const colWidth = contentWidth / 5; // 192px per badge column
-
-    badges.forEach((b, idx) => {
-      const cx = contentLeft + (idx * colWidth) + (colWidth / 2);
-      const cy = cursorY + badgeRadius + 4;
-
-      // Draw Luxury Medallion
-      this.drawLuxuryBadge(ctx, cx, cy, badgeRadius, b, palette);
-
-      // Badge Name Label
-      ctx.font = `700 15px ${fontPrimary}`;
-      ctx.fillStyle = b.unlocked ? palette.primaryText : 'rgba(255, 255, 255, 0.45)';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'top';
-      ctx.fillText(b.name, cx, cy + badgeRadius + 24);
-
-      // Sub-label (threshold / order)
-      ctx.font = `600 13px ${fontPrimary}`;
-      ctx.fillStyle = b.unlocked ? (palette.accentColor || '#F59E0B') : 'rgba(255, 255, 255, 0.3)';
-      const subLabel = b.key === 'FIRST_STEP' ? '1st Step' : (b.key === 'ACHIEVER' ? '100% Goal' : `${b.thresholdPct}% Mark`);
-      ctx.fillText(subLabel, cx, cy + badgeRadius + 44);
+      this.drawMilestoneSignboard(ctx, contentLeft, rowY, contentWidth, signboardH, m, status, palette, scale);
     });
 
-    cursorY += (badgeRadius * 2) + 80;
+    cursorY += (visibleMilestones.length * (signboardH + signboardGap));
 
-    // --- Block 5: Footer Zone (85–97% / 1632 - 1862px): Tagline & Branding ---
-    const footerTop = Math.max(cursorY, Math.round(height * 0.86)); // ~1650px
+    // Overflow indicator if total milestones exceeds visible count
+    if (sortedMilestones.length > visibleMilestones.length) {
+      const remainingCount = sortedMilestones.length - visibleMilestones.length;
+      ctx.font = `italic 600 ${Math.round(14 * scale)}px ${fontPrimary}`;
+      ctx.fillStyle = palette.accentColor || '#F59E0B';
+      ctx.textAlign = 'left';
+      ctx.fillText(`+${remainingCount} more completed milestones in journey`, contentLeft + Math.round(56 * scale), cursorY + 4);
+      cursorY += Math.round(24 * scale);
+    }
+
+    // ========================================================
+    // SECTION E: MOTIVATIONAL FOOTER
+    // ========================================================
+    const footerTop = Math.max(cursorY + 20, height - Math.round(135 * Math.min(verticalRatio, 1.25)));
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
-    ctx.font = `italic 500 24px ${fontPrimary}`;
-    ctx.fillStyle = palette.secondaryText;
-    const quoteStr = `"${motivation.quote}"`;
-    this.wrapText(ctx, quoteStr, width / 2, footerTop, contentWidth, 34, 2);
 
-    // Clean Horizon Branding above bottom gesture bar
-    ctx.font = `700 14px ${fontPrimary}`;
+    // Progress-based motivational quote
+    const quoteStr = `"${motivation.quote}"`;
+    ctx.font = `italic 500 ${Math.round(21 * scale)}px ${fontPrimary}`;
+    ctx.fillStyle = palette.secondaryText;
+    this.wrapText(ctx, quoteStr, contentCenterX, footerTop, contentWidth * 0.94, Math.round(30 * scale), 2);
+
+    // Hallmark branding
+    ctx.font = `700 ${Math.round(13 * scale)}px ${fontPrimary}`;
     ctx.fillStyle = palette.accentColor || '#F59E0B';
-    ctx.fillText('HORIZON ACHIEVEMENT HUD • FULL-RESOLUTION 1080×1920', width / 2, Math.round(height * 0.95));
+    ctx.fillText('HORIZON ACHIEVEMENT HUD • MOTIVATIONAL WALLPAPER', contentCenterX, height - Math.round(55 * scale));
   }
 
   /**
    * Layout Renderer: Desktop Display (1920x1080)
    * 
-   * Asymmetric 16:9 composition:
-   * - Left 52%: Cinematic branding, headline, duration, real analytics chips, and motivational quote
-   * - Right 44%: Glass HUD card with circular progress, days counter, milestone list, and badges
+   * Asymmetric 16:9 panoramic composition:
+   * - Left 50%: Motivational Header, Days Countdown with vector icon, Goal Title, and Motivational Quote
+   * - Right 46%: Course Progress Card + Milestone Journey Tracker Signboard with glowing timeline
    */
   static renderDesktopLayout(ctx, width, height, safeZone, data) {
     const { goal, palette, daysRemaining, progressPct, activeMilestone, upcomingMilestone, badges, motivation } = data;
     const fontPrimary = "'Roboto', -apple-system, BlinkMacSystemFont, system-ui, sans-serif";
+    const fontSerif = "'Caveat', 'Playfair Display', 'Georgia', cursive, serif, sans-serif";
 
-    const hudLeft = Math.round(width * 0.52);
-    const hudWidth = Math.round(width * 0.42);
-    const hudTop = safeZone.contentTop + 30;
-    const hudHeight = height - safeZone.topReserved - safeZone.bottomReserved - 60;
+    const hudLeft = Math.round(width * 0.50);
+    const hudWidth = Math.round(width * 0.44);
+    const hudTop = safeZone.contentTop + 24;
+    const hudHeight = height - safeZone.topReserved - safeZone.bottomReserved - 48;
 
-    // --- Left Panoramic Area: Branding, Headline, Real Analytics, Quote ---
-    const brandLeft = Math.round(width * 0.08); // 8% horizontal margin
+    // --- Left Panoramic Area: Motivational Header, Countdown, Quote ---
+    const brandLeft = Math.round(width * 0.08);
     const leftWidth = hudLeft - brandLeft - 60;
-    let leftCursorY = safeZone.contentTop + 60;
+    let leftCursorY = safeZone.contentTop + 40;
 
-    // Category Pill
-    const category = (goal?.category || (goal?.sourceType ? `${goal.sourceType} Course` : 'Learning')).toUpperCase();
-    ctx.font = `700 18px ${fontPrimary}`;
-    ctx.fillStyle = palette.accentColor;
+    // Section A: Motivational Header
+    this.drawFlourishDivider(ctx, brandLeft + 140, leftCursorY, 260, palette.accentColor || '#F59E0B');
+    leftCursorY += 14;
+
+    ctx.font = `italic 700 38px ${fontSerif}`;
+    ctx.fillStyle = '#FEF3C7';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.fillText(`HORIZON GOAL • ${category}`, brandLeft, leftCursorY);
-    leftCursorY += 34;
+    ctx.fillText('Keep Going!', brandLeft, leftCursorY);
+    leftCursorY += 44;
 
-    // Goal Title with auto-fit and wrapping
-    ctx.fillStyle = palette.primaryText;
-    const goalTitle = goal?.title || 'Achievement Countdown Goal';
-    leftCursorY = this.fitAndWrapText(ctx, goalTitle, brandLeft, leftCursorY, leftWidth, 56, 38, fontPrimary, 2, '800');
+    ctx.font = `500 18px ${fontPrimary}`;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.fillText('Big dreams are built one lesson at a time.', brandLeft, leftCursorY);
+    leftCursorY += 40;
 
-    leftCursorY += 24;
+    // Section B: Days Remaining Countdown
+    const countdown = this.calculateCountdown(goal);
+    ctx.save();
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.75)';
+    ctx.shadowBlur = 12;
 
-    // Target Deadline & Sprint Subtitle
-    ctx.font = `600 20px ${fontPrimary}`;
-    ctx.fillStyle = palette.secondaryText;
-    const targetDateStr = goal?.targetDate
-      ? new Date(goal.targetDate).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })
-      : `${daysRemaining} days`;
-    ctx.fillText(`Target Deadline: ${targetDateStr} (${daysRemaining} Days Remaining)`, brandLeft, leftCursorY);
-    leftCursorY += 34;
+    this.drawHourglassIcon(ctx, brandLeft + 20, leftCursorY + 34, 32, palette.accentColor || '#F59E0B');
 
-    // Real Analytics Pills (rendered only when present in data model)
+    ctx.font = `900 68px ${fontPrimary}`;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillText(countdown.headline, brandLeft + 54, leftCursorY);
+    ctx.restore();
+    leftCursorY += 80;
+
+    // Subtitle Callout
+    ctx.font = `600 22px ${fontPrimary}`;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+    leftCursorY = this.fitAndWrapText(ctx, countdown.sublabel, brandLeft, leftCursorY, leftWidth, 22, 16, fontPrimary, 2, '600');
+    leftCursorY += 30;
+
+    // Real Analytics Pills
     const analyticsPills = [];
     if (goal?.streakDays && goal.streakDays > 0) {
       analyticsPills.push(`🔥 ${goal.streakDays}-Day Streak`);
@@ -1285,149 +1596,121 @@ export class CanvasWallpaperEngine {
 
     if (analyticsPills.length > 0) {
       ctx.font = `700 16px ${fontPrimary}`;
-      ctx.fillStyle = palette.accentColor;
+      ctx.fillStyle = palette.accentColor || '#F59E0B';
       ctx.fillText(analyticsPills.join('   •   '), brandLeft, leftCursorY);
-      leftCursorY += 40;
+      leftCursorY += 45;
     }
 
-    leftCursorY += 20;
+    leftCursorY += 15;
 
-    // Motivational Quote on Left Pane
-    ctx.font = `italic 500 24px ${fontPrimary}`;
+    // Section E: Motivational Quote on Left Pane
+    ctx.font = `italic 500 23px ${fontPrimary}`;
     ctx.fillStyle = palette.secondaryText;
-    this.wrapText(ctx, `"${motivation.quote}"`, brandLeft, leftCursorY, leftWidth, 36, 2);
+    this.wrapText(ctx, `"${motivation.quote}"`, brandLeft, leftCursorY, leftWidth, 34, 2);
 
-    // --- Right Glass HUD Container Card ---
-    ctx.fillStyle = palette.cardBackground || 'rgba(15, 23, 42, 0.70)';
-    this.drawRoundedRect(ctx, hudLeft, hudTop, hudWidth, hudHeight, 26);
+    // --- Right Panoramic Area: Progress Card + Milestone Journey Tracker ---
+    let hudCursorY = hudTop;
+
+    // Section C: Course Progress Card in Right Pane
+    const progressCardH = 180;
+    ctx.fillStyle = palette.cardBackground || 'rgba(15, 23, 42, 0.65)';
+    this.drawRoundedRect(ctx, hudLeft, hudCursorY, hudWidth, progressCardH, 20);
     ctx.fill();
-    ctx.strokeStyle = palette.cardBorder || 'rgba(255, 255, 255, 0.15)';
+    ctx.strokeStyle = palette.cardBorder || 'rgba(255, 255, 255, 0.18)';
     ctx.lineWidth = 1.5;
     ctx.stroke();
 
-    let hudCursorY = hudTop + 35;
-    const hudInnerLeft = hudLeft + 36;
-    const hudInnerWidth = hudWidth - 72;
+    // Progress Ring
+    const ringRadius = 56;
+    const ringCx = hudLeft + 85;
+    const ringCy = hudCursorY + (progressCardH / 2);
+    this.drawProgressRing(ctx, ringCx, ringCy, ringRadius, 12, progressPct, palette.progressFill || palette.accentColor || '#F59E0B', palette.progressTrack || 'rgba(255, 255, 255, 0.12)');
 
-    // Progress Ring & Countdown Section
-    const ringRadius = 60;
-    const ringCx = hudInnerLeft + ringRadius;
-    const ringCy = hudCursorY + ringRadius;
-
-    this.drawProgressRing(ctx, ringCx, ringCy, ringRadius, 13, progressPct, palette.progressFill, palette.progressTrack);
-
-    ctx.font = `800 32px ${fontPrimary}`;
+    ctx.font = `900 32px ${fontPrimary}`;
     ctx.fillStyle = palette.primaryText;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(`${progressPct}%`, ringCx, ringCy - 4);
 
+    ctx.font = `800 11px ${fontPrimary}`;
+    ctx.fillStyle = palette.secondaryText;
+    const statusText = progressPct >= 100 ? 'COMPLETED' : (progressPct > 0 ? 'IN PROGRESS' : 'NOT STARTED');
+    ctx.fillText(statusText, ringCx, ringCy + 20);
+
+    // Progress Details
+    const textLeft = ringCx + ringRadius + 30;
+    const textTop = hudCursorY + 28;
+
+    const categoryTag = (goal?.category || (goal?.sourceType ? `${goal.sourceType} Course` : 'Course')).toUpperCase();
     ctx.font = `700 13px ${fontPrimary}`;
-    ctx.fillStyle = palette.secondaryText;
-    ctx.fillText('PROGRESS', ringCx, ringCy + 22);
-
-    // Days Countdown Callout (Right of Ring)
-    const countLeft = ringCx + ringRadius + 35;
+    ctx.fillStyle = palette.accentColor || '#F59E0B';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.font = `800 56px ${fontPrimary}`;
+    ctx.fillText(`✦ ${categoryTag}`, textLeft, textTop);
+
+    ctx.font = `800 22px ${fontPrimary}`;
     ctx.fillStyle = palette.primaryText;
-    ctx.fillText(String(daysRemaining), countLeft, hudCursorY - 5);
+    ctx.fillText('Course Progress', textLeft, textTop + 20);
 
-    ctx.font = `800 16px ${fontPrimary}`;
-    ctx.fillStyle = palette.accentColor;
-    ctx.fillText('DAYS REMAINING', countLeft, hudCursorY + 54);
-
-    ctx.font = `500 15px ${fontPrimary}`;
+    const countLabel = milestones.length > 0
+      ? `${completedCount} of ${milestones.length} Milestones Complete`
+      : `${Math.round((progressPct / 100) * (goal?.totalDays || 15))} of ${goal?.totalDays || 15} Days Complete`;
+    ctx.font = `600 16px ${fontPrimary}`;
     ctx.fillStyle = palette.secondaryText;
-    ctx.fillText(`Target: ${targetDateStr}`, countLeft, hudCursorY + 78);
-
-    hudCursorY += ringRadius * 2 + 30;
-
-    // Completed Milestones & Current Focus Card inside HUD
-    const completedList = sortedMilestones.filter(m => m.status === 'completed' || m.completed === true);
-
-    const milestoneCardH = 210;
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
-    this.drawRoundedRect(ctx, hudInnerLeft, hudCursorY, hudInnerWidth, milestoneCardH, 16);
-    ctx.fill();
-    ctx.strokeStyle = palette.cardBorder || 'rgba(255, 255, 255, 0.15)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
-    ctx.font = `700 14px ${fontPrimary}`;
-    ctx.fillStyle = palette.accentColor;
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'top';
-    ctx.fillText(`MILESTONES • ${completedList.length}/${milestones.length} COMPLETED`, hudInnerLeft + 18, hudCursorY + 16);
-
-    let mItemY = hudCursorY + 44;
-    const completedToShow = completedList.slice(-3);
-    for (const m of completedToShow) {
-      ctx.textAlign = 'left';
-      ctx.font = `700 14px ${fontPrimary}`;
-      ctx.fillStyle = '#10B981';
-      ctx.fillText('✓', hudInnerLeft + 18, mItemY);
-
-      ctx.font = `500 14px ${fontPrimary}`;
-      ctx.fillStyle = palette.primaryText;
-      let mTitle = `#${m.order} ${m.title}`;
-      while (ctx.measureText(mTitle).width > hudInnerWidth - 60 && mTitle.length > 10) {
-        mTitle = mTitle.slice(0, -1).trim();
-      }
-      ctx.fillText(mTitle, hudInnerLeft + 36, mItemY);
-      mItemY += 26;
-    }
-
-    if (completedList.length > completedToShow.length) {
-      ctx.font = `italic 600 12px ${fontPrimary}`;
-      ctx.fillStyle = palette.accentColor;
-      ctx.fillText(`+${completedList.length - completedToShow.length} more completed`, hudInnerLeft + 36, mItemY);
-      mItemY += 22;
-    }
-
-    if (activeMilestone) {
-      ctx.font = `700 14px ${fontPrimary}`;
-      ctx.fillStyle = palette.accentColor;
-      ctx.fillText('🎯', hudInnerLeft + 18, mItemY);
-
-      ctx.font = `700 14px ${fontPrimary}`;
-      ctx.fillStyle = palette.accentColor;
-      let actText = `Next: #${activeMilestone.order} ${activeMilestone.title}`;
-      while (ctx.measureText(actText).width > hudInnerWidth - 60 && actText.length > 10) {
-        actText = actText.slice(0, -1).trim();
-      }
-      ctx.fillText(actText, hudInnerLeft + 36, mItemY);
-    }
-
-    hudCursorY += milestoneCardH + 25;
-
-    // Achievement Badges Row in HUD (Rendered with Luxury Medallions)
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'top';
-    ctx.font = `700 14px ${fontPrimary}`;
-    ctx.fillStyle = palette.secondaryText;
-    ctx.fillText('ACHIEVEMENTS EARNED', hudInnerLeft, hudCursorY);
+    ctx.fillText(countLabel, textLeft, textTop + 50);
 
     const unlockedBadges = (badges || []).filter(b => b.unlocked);
     const highestBadge = unlockedBadges[unlockedBadges.length - 1];
     if (highestBadge) {
-      ctx.textAlign = 'right';
       ctx.font = `700 13px ${fontPrimary}`;
       ctx.fillStyle = highestBadge.color || '#F59E0B';
-      ctx.fillText(`★ ${highestBadge.name}`, hudInnerLeft + hudInnerWidth, hudCursorY);
+      ctx.fillText(`★ Highest: ${highestBadge.name}`, textLeft, textTop + 80);
     }
+
+    hudCursorY += progressCardH + 24;
+
+    // Section D: Milestone Journey Tracker Signboards in Right Pane
+    ctx.font = `800 15px ${fontPrimary}`;
+    ctx.fillStyle = palette.accentColor || '#F59E0B';
+    ctx.fillText('MILESTONE JOURNEY TRACKER', hudLeft, hudCursorY);
 
     hudCursorY += 24;
 
-    const desktopBadgeRadius = 26; // 52px diameter
-    const badgeGap = (hudInnerWidth - (desktopBadgeRadius * 2 * 5)) / 4;
+    const maxDesktopMilestones = 4;
+    const signboardH = 68;
+    const signboardGap = 12;
+    const visibleMilestones = this.selectVisibleMilestones(sortedMilestones, maxDesktopMilestones);
 
-    badges.forEach((b, idx) => {
-      const cx = hudInnerLeft + (idx * (desktopBadgeRadius * 2 + badgeGap)) + desktopBadgeRadius;
-      const cy = hudCursorY + desktopBadgeRadius;
+    // Vertical timeline track
+    if (visibleMilestones.length > 1) {
+      const trackX = hudLeft + 24;
+      const trackTopY = hudCursorY + (signboardH / 2);
+      const trackBottomY = hudCursorY + ((visibleMilestones.length - 1) * (signboardH + signboardGap)) + (signboardH / 2);
 
-      this.drawLuxuryBadge(ctx, cx, cy, desktopBadgeRadius, b, palette);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(trackX, trackTopY);
+      ctx.lineTo(trackX, trackBottomY);
+      ctx.stroke();
+    }
+
+    visibleMilestones.forEach((m, idx) => {
+      const rowY = hudCursorY + (idx * (signboardH + signboardGap));
+      const isCompleted = m.status === 'completed' || m.completed === true;
+      const isActive = !isCompleted && (m.id === activeMilestone?.id || idx === 0 && !completedCount);
+      const status = isCompleted ? 'completed' : (isActive ? 'current' : 'pending');
+
+      this.drawMilestoneSignboard(ctx, hudLeft, rowY, hudWidth, signboardH, m, status, palette, 0.95);
     });
+
+    hudCursorY += (visibleMilestones.length * (signboardH + signboardGap));
+
+    if (sortedMilestones.length > visibleMilestones.length) {
+      const remainingCount = sortedMilestones.length - visibleMilestones.length;
+      ctx.font = `italic 600 13px ${fontPrimary}`;
+      ctx.fillStyle = palette.accentColor || '#F59E0B';
+      ctx.fillText(`+${remainingCount} more completed milestones in journey`, hudLeft + 48, hudCursorY + 4);
+    }
   }
 }

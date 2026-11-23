@@ -40,7 +40,10 @@ export function sanitizeFilenameSlug(rawTitle) {
 export function generateWallpaperFilename(goal, themeId = 'alpine-peak', preset = 'MOBILE') {
   const themeSlug = sanitizeFilenameSlug(themeId || goal?.templateId || 'alpine-peak');
   const titleSlug = sanitizeFilenameSlug(goal?.title);
-  const presetSlug = (preset === 'DESKTOP') ? 'desktop' : 'mobile';
+  let presetSlug = 'mobile';
+  if (preset === 'DESKTOP') presetSlug = 'desktop';
+  else if (preset === 'MOTOROLA_EDGE' || preset === 'EDGE_50_FUSION') presetSlug = 'edge50-fusion';
+  else if (preset === 'MOBILE_COMPACT') presetSlug = 'compact';
 
   return `horizon-${themeSlug}-${titleSlug}-${presetSlug}.png`;
 }
@@ -75,7 +78,17 @@ export const wallpaperExportService = {
       return { success: false, width: 0, height: 0, error: 'Document is not available in current environment' };
     }
 
-    const dim = (preset === 'DESKTOP') ? CANVAS_DIMENSIONS.DESKTOP : CANVAS_DIMENSIONS.MOBILE;
+    let dim;
+    const upperPreset = String(preset || 'MOBILE').toUpperCase();
+    if (upperPreset === 'DESKTOP') {
+      dim = CANVAS_DIMENSIONS.DESKTOP;
+    } else if (upperPreset === 'MOTOROLA_EDGE' || upperPreset === 'EDGE_50_FUSION' || upperPreset === 'MOBILE_TALL') {
+      dim = CANVAS_DIMENSIONS.MOTOROLA_EDGE;
+    } else if (upperPreset === 'MOBILE_COMPACT') {
+      dim = CANVAS_DIMENSIONS.MOBILE_COMPACT;
+    } else {
+      dim = CANVAS_DIMENSIONS.MOBILE;
+    }
 
     // Create a dedicated full-resolution offscreen canvas
     const exportCanvas = document.createElement('canvas');

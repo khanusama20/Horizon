@@ -31,11 +31,15 @@
         >
           <v-btn value="MOBILE" class="flex-grow-1 font-weight-medium" size="small">
             <v-icon icon="mdi-cellphone" start size="16" />
-            Mobile (1080×1920)
+            9:16 (1920)
+          </v-btn>
+          <v-btn value="MOTOROLA_EDGE" class="flex-grow-1 font-weight-medium" size="small">
+            <v-icon icon="mdi-cellphone-text" start size="16" />
+            Edge 50 (2400)
           </v-btn>
           <v-btn value="DESKTOP" class="flex-grow-1 font-weight-medium" size="small">
             <v-icon icon="mdi-monitor" start size="16" />
-            Desktop (1920×1080)
+            Desktop (1080)
           </v-btn>
         </v-btn-toggle>
       </v-col>
@@ -80,7 +84,7 @@
       class="font-weight-bold text-uppercase tracking-wider mb-2"
       @click="handleExport"
     >
-      Download Wallpaper ({{ preset === 'DESKTOP' ? '1920×1080' : '1080×1920' }})
+      Download Wallpaper ({{ preset === 'DESKTOP' ? '1920×1080' : (preset === 'MOTOROLA_EDGE' ? '1080×2400' : '1080×1920') }})
     </v-btn>
 
     <!-- Unobtrusive Static PNG Clarification Note -->
@@ -139,7 +143,9 @@ const snackbar = ref({
 });
 
 const resolutionLabel = computed(() => {
-  return props.preset === 'DESKTOP' ? 'Desktop 1920 × 1080 px (16:9)' : 'Mobile 1080 × 1920 px (9:16)';
+  if (props.preset === 'DESKTOP') return 'Desktop 1920 × 1080 px (16:9)';
+  if (props.preset === 'MOTOROLA_EDGE') return 'Edge 50 Fusion 1080 × 2400 px (9:20)';
+  return 'Mobile 1080 × 1920 px (9:16)';
 });
 
 const expectedFilename = computed(() => {

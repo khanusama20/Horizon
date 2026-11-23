@@ -20,11 +20,15 @@
         >
           <v-btn value="MOBILE" size="small">
             <v-icon icon="mdi-cellphone" start size="16" />
-            Mobile 9:16
+            9:16 (1920)
+          </v-btn>
+          <v-btn value="MOTOROLA_EDGE" size="small">
+            <v-icon icon="mdi-cellphone-text" start size="16" />
+            Edge 50 (2400)
           </v-btn>
           <v-btn value="DESKTOP" size="small">
             <v-icon icon="mdi-monitor" start size="16" />
-            Desktop 16:9
+            16:9 (1080)
           </v-btn>
         </v-btn-toggle>
 
@@ -80,11 +84,15 @@ const currentPreset = ref('MOBILE');
 const showSafeZones = ref(false);
 
 const canvasWidth = computed(() => {
-  return currentPreset.value === 'DESKTOP' ? CANVAS_DIMENSIONS.DESKTOP.width : CANVAS_DIMENSIONS.MOBILE.width;
+  if (currentPreset.value === 'DESKTOP') return CANVAS_DIMENSIONS.DESKTOP.width;
+  if (currentPreset.value === 'MOTOROLA_EDGE') return CANVAS_DIMENSIONS.MOTOROLA_EDGE.width;
+  return CANVAS_DIMENSIONS.MOBILE.width;
 });
 
 const canvasHeight = computed(() => {
-  return currentPreset.value === 'DESKTOP' ? CANVAS_DIMENSIONS.DESKTOP.height : CANVAS_DIMENSIONS.MOBILE.height;
+  if (currentPreset.value === 'DESKTOP') return CANVAS_DIMENSIONS.DESKTOP.height;
+  if (currentPreset.value === 'MOTOROLA_EDGE') return CANVAS_DIMENSIONS.MOTOROLA_EDGE.height;
+  return CANVAS_DIMENSIONS.MOBILE.height;
 });
 
 const canvasStyle = computed(() => {
@@ -94,6 +102,13 @@ const canvasStyle = computed(() => {
       maxWidth: '640px',
       height: 'auto',
       aspectRatio: '16 / 9'
+    };
+  }
+  if (currentPreset.value === 'MOTOROLA_EDGE') {
+    return {
+      width: 'auto',
+      maxHeight: '480px',
+      aspectRatio: '9 / 20'
     };
   }
   return {
