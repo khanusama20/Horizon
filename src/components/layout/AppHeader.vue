@@ -94,6 +94,22 @@
       </v-tooltip>
     </div>
 
+    <!-- Take Guided Tour Action Button -->
+    <v-tooltip location="bottom" text="Take Guided Tour">
+      <template #activator="{ props }">
+        <v-btn
+          v-bind="props"
+          icon="mdi-compass-outline"
+          size="small"
+          variant="text"
+          color="primary"
+          class="me-1"
+          aria-label="Take Guided Tour"
+          @click="$emit('start-tour')"
+        />
+      </template>
+    </v-tooltip>
+
     <!-- Quick Reset Button -->
     <v-tooltip location="bottom" text="Reset active goal to default">
       <template #activator="{ props }">
@@ -130,7 +146,7 @@ const props = defineProps({
   }
 });
 
-defineEmits(['reset-goal', 'start-demo', 'exit-demo', 'open-preview', 'back-to-dashboard']);
+defineEmits(['reset-goal', 'start-demo', 'exit-demo', 'open-preview', 'back-to-dashboard', 'start-tour']);
 
 const isServerOnline = ref(false);
 

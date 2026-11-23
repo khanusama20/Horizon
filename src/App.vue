@@ -10,6 +10,7 @@
       @reset-goal="showResetDialog = true"
       @open-preview="openMobilePreview"
       @back-to-dashboard="handleBackToDashboard"
+      @start-tour="handleStartTour"
     />
 
     <!-- Main Workspace Container: View-Switching between Dashboard & Mobile Preview -->
@@ -25,6 +26,9 @@
           class="dashboard-scroll-container"
         >
           <div class="dashboard-content-wrapper">
+            <!-- Guided Tour Invitation Banner (Non-blocking, dismissible) -->
+            <TourInvitationBanner v-if="!isDemoMode" />
+
             <!-- Error & Storage Warnings -->
             <v-alert
               v-if="storageStatus.hasCorruptedData"
@@ -47,6 +51,7 @@
 
             <!-- 1. First-Time User Onboarding & Value Proposition Hero -->
             <v-sheet
+              id="section-intro-banner"
               v-if="showIntroBanner && !isDemoMode"
               color="surface"
               class="intro-hero-banner pa-4 rounded-xl mb-5 border"
@@ -195,6 +200,9 @@
         <v-btn variant="text" @click="studioSnackbar.show = false">Close</v-btn>
       </template>
     </v-snackbar>
+
+    <!-- Guided Interactive Tour Guide Orchestrator -->
+    <TourGuide />
   </v-app>
 </template>
 
@@ -210,6 +218,9 @@ import DashboardPreviewCard from './components/wallpaper/DashboardPreviewCard.vu
 import MobileWallpaperPreviewPage from './components/wallpaper/MobileWallpaperPreviewPage.vue';
 import WallpaperExportControls from './components/wallpaper/WallpaperExportControls.vue';
 import DemoPresentationMode from './components/demo/DemoPresentationMode.vue';
+import TourInvitationBanner from './components/tour/TourInvitationBanner.vue';
+import TourGuide from './components/tour/TourGuide.vue';
+import { useTourGuide } from './composables/useTourGuide.js';
 import { generateMilestonePlan } from './services/milestoneEngine.js';
 import { createDemoGoal } from './services/demoDataService.js';
 import {
@@ -227,6 +238,17 @@ const {
   enterDemoMode,
   exitDemoMode
 } = useStorage();
+
+const { startTour } = useTourGuide();
+
+function handleStartTour() {
+  if (currentView.value !== 'dashboard') {
+    currentView.value = 'dashboard';
+  }
+  nextTick(() => {
+    startTour();
+  });
+}
 
 // View switching state ('dashboard' | 'preview')
 const currentView = ref('dashboard');

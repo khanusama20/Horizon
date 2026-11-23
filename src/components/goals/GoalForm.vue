@@ -31,7 +31,7 @@
     </div>
 
     <!-- Source Ingestion Banner / Multi-Source Selector -->
-    <v-sheet color="surface-variant" class="pa-4 rounded-lg mb-4" border>
+    <v-sheet id="section-source-selection" color="surface-variant" class="pa-4 rounded-lg mb-4" border>
       <!-- Source Provider Selector Tabs -->
       <div class="d-flex align-center flex-wrap gap-2 mb-3">
         <span class="text-caption font-weight-bold text-uppercase tracking-wider text-medium-emphasis me-1">

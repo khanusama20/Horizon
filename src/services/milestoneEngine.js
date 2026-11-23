@@ -13,10 +13,10 @@ import { classifySectionType } from './assessmentDetector.js';
  * @param {number} [fallbackDays=15] - Fallback duration if targetDate is invalid
  * @returns {number} Days remaining
  */
-export function calculateDaysRemaining(targetDate, fallbackDays = 15) {
+export function calculateDaysRemaining(targetDate, fallbackDays = 15, baseDate = new Date()) {
   if (!targetDate) return fallbackDays;
   try {
-    const now = new Date();
+    const now = new Date(baseDate);
     now.setHours(0, 0, 0, 0);
 
     const target = new Date(targetDate);
@@ -71,7 +71,7 @@ export function generateMilestonePlan(goal, referenceDate = new Date()) {
   // Determine available timeline: respect targetDate if present, otherwise use goal.totalDays
   let effectiveDays;
   if (goal.targetDate) {
-    const daysDiff = calculateDaysRemaining(goal.targetDate, goal.totalDays || 15);
+    const daysDiff = calculateDaysRemaining(goal.targetDate, goal.totalDays || 15, referenceDate);
     effectiveDays = (daysDiff > 0) ? daysDiff : (goal.totalDays && goal.totalDays > 0 ? goal.totalDays : 1);
   } else {
     effectiveDays = (goal.totalDays && goal.totalDays > 0) ? goal.totalDays : 15;
