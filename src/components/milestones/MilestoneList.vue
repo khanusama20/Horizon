@@ -15,17 +15,21 @@
       </div>
 
       <!-- Action: Regenerate Plan Button -->
-      <v-btn
-        v-if="totalMilestones > 0"
-        variant="tonal"
-        color="primary"
-        size="small"
-        prepend-icon="mdi-refresh"
-        class="font-weight-bold"
-        @click="$emit('regenerate-plan')"
-      >
-        Regenerate Schedule
-      </v-btn>
+      <v-tooltip v-if="totalMilestones > 0" location="top" text="Re-calculate milestone schedule dates">
+        <template #activator="{ props }">
+          <v-btn
+            v-bind="props"
+            variant="tonal"
+            color="primary"
+            size="small"
+            prepend-icon="mdi-refresh"
+            class="font-weight-bold"
+            @click="$emit('regenerate-plan')"
+          >
+            Regenerate Schedule
+          </v-btn>
+        </template>
+      </v-tooltip>
     </div>
 
     <!-- Overall Progress Linear Bar -->

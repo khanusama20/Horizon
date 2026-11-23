@@ -13,7 +13,7 @@
       </div>
 
       <!-- 1-Click Sample Course Demo Button -->
-      <v-tooltip location="bottom" text="Instantly loads complete 15-day LLM Engineering Course (100% Offline Demo)">
+      <v-tooltip location="bottom" text="Load 15-day sample curriculum (100% Offline Demo)">
         <template #activator="{ props }">
           <v-btn
             v-bind="props"
@@ -54,18 +54,19 @@
           <template #append-inner>
             <v-tooltip location="top" text="Import Course from URL">
               <template #activator="{ props: tooltipProps }">
-                <v-btn
-                  v-bind="tooltipProps"
-                  icon="mdi-arrow-right"
-                  color="primary"
-                  variant="flat"
-                  size="small"
-                  :loading="isExtracting"
-                  :disabled="!courseUrl.trim()"
-                  class="url-import-btn shadow-orange"
-                  aria-label="Import course from URL"
-                  @click="handleExtractUrl"
-                />
+                <span v-bind="tooltipProps" class="d-inline-flex">
+                  <v-btn
+                    icon="mdi-arrow-right"
+                    color="primary"
+                    variant="flat"
+                    size="small"
+                    :loading="isExtracting"
+                    :disabled="!courseUrl.trim()"
+                    class="url-import-btn shadow-orange"
+                    aria-label="Import course from URL"
+                    @click="handleExtractUrl"
+                  />
+                </span>
               </template>
             </v-tooltip>
           </template>

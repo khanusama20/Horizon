@@ -44,10 +44,13 @@
         md="2"
         class="flex-grow-1"
       >
-        <v-tooltip location="top" :text="badge.description">
+        <v-tooltip location="top">
           <template #activator="{ props }">
             <v-sheet
               v-bind="props"
+              tabindex="0"
+              role="article"
+              :aria-label="`${badge.name}: ${badge.unlocked ? 'Unlocked' : 'Locked'}`"
               :color="badge.unlocked ? 'surface' : 'surface-variant'"
               :class="[
                 'pa-3 rounded-lg text-center h-100 transition-all border d-flex flex-column align-center justify-space-between',
@@ -80,6 +83,10 @@
               </v-chip>
             </v-sheet>
           </template>
+          <div class="text-center py-0.5">
+            <div class="tooltip-title">{{ badge.name }}</div>
+            <div class="tooltip-body text-caption">{{ badge.description }}</div>
+          </div>
         </v-tooltip>
       </v-col>
     </v-row>

@@ -67,6 +67,12 @@ export default createVuetify({
     }
   },
   defaults: {
+    VTooltip: {
+      location: 'top',
+      openDelay: 100,
+      closeDelay: 50,
+      offset: 8
+    },
     VCard: {
       elevation: 0,
       rounded: 'lg'

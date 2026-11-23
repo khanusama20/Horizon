@@ -15,15 +15,19 @@
           Paste course modules, Roman numerals, or bullet points to instantly extract clean sections.
         </v-card-subtitle>
         <template #append>
-          <v-btn
-            icon="mdi-close"
-            variant="text"
-            size="small"
-            color="medium-emphasis"
-            aria-label="Close dialog"
-            title="Close"
-            @click="$emit('update:modelValue', false)"
-          />
+          <v-tooltip location="bottom" text="Close dialog">
+            <template #activator="{ props }">
+              <v-btn
+                v-bind="props"
+                icon="mdi-close"
+                variant="text"
+                size="small"
+                color="medium-emphasis"
+                aria-label="Close dialog"
+                @click="$emit('update:modelValue', false)"
+              />
+            </template>
+          </v-tooltip>
         </template>
       </v-card-item>
 
