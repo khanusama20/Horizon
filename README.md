@@ -135,6 +135,45 @@ export const IP_CONFIG = {
 ```
 Both the Vue frontend API client and the Vite dev proxy automatically route all requests to this configured IP!
 
+### 📺 Multi-Source Learning Ingestion (Udemy, YouTube & Manual)
+
+Horizon supports 3 distinct, first-class learning source providers:
+1. **Udemy & Web Courses**: Automatic OpenGraph & slug derivation with SSRF-safe proxy.
+2. **YouTube Playlists & Videos**: Official YouTube Data API v3 integration:
+   - Full playlist pagination (>50 items) preserving playlist order.
+   - ISO 8601 duration conversion (`PT15M33S` $\rightarrow$ seconds).
+   - Pre-plan video review drawer enabling users to remove unwanted videos.
+   - Watch links embedded directly in milestones (`mdi-youtube`).
+3. **Manual Quick-Syllabus Parser**: Text/markdown outline tokenizer.
+
+#### Configuring YouTube Data API v3:
+1. Obtain an API key from [Google Cloud Console](https://console.cloud.google.com/apis/credentials).
+2. Enable **YouTube Data API v3** in your project.
+3. Create a `.env` file in the root directory (or set environment variable):
+   ```env
+   YOUTUBE_API_KEY=your_api_key_here
+   ```
+4. If the key is not set, Horizon gracefully displays a configuration notice and offers the manual syllabus fallback.
+
+---
+
+### 🎨 Advanced Wallpaper Customization
+
+- **🖼️ Temporary In-Memory Custom Background Image**:
+  - Reusable component (`src/components/wallpaper/CustomWallpaperImage.vue`).
+  - Supports PNG, JPG/JPEG, WebP up to 10 MB.
+  - In-browser memory only (`URL.createObjectURL`); zero bytes stored on server or in `LocalStorage`.
+  - Object URLs are safely revoked upon replace, clear, or unmount.
+  - Clears automatically on page reload.
+  - Canvas renders with luxury atmospheric scrim to guarantee typography legibility.
+
+- **🎨 User-Controlled Color Customization**:
+  - Reusable component (`src/components/wallpaper/WallpaperColorControls.vue`).
+  - 4 Curated Presets: **Warm Horizon**, **Deep Ocean**, **Forest Calm**, **Minimal Stone**.
+  - 5 customizable color pickers: Background, Primary Accent, Heading Text, Body Text, and Card/Overlay.
+  - Fully compatible with HTML5 Canvas wallpaper rendering and PNG export.
+  - "Reset to Nature Theme" restores original theme appearance with 1 click.
+
 ---
 
 ## 🧪 Testing & Verification
@@ -154,24 +193,28 @@ npm run build
 
 ### Test Suite Coverage
 ```
- ✓ tests/unit/canvasEngine.spec.js (13 tests)
+ ✓ tests/unit/wallpaperColorControls.spec.js (7 tests)
  ✓ tests/unit/wallpaperExportService.spec.js (19 tests)
- ✓ tests/unit/visualStepper.spec.js (7 tests)
  ✓ tests/unit/floatingDeviceSwitcher.spec.js (6 tests)
- ✓ tests/unit/demoPresentationMode.spec.js (12 tests)
+ ✓ tests/unit/visualStepper.spec.js (7 tests)
  ✓ tests/unit/block7Verification.spec.js (15 tests)
+ ✓ tests/unit/demoPresentationMode.spec.js (12 tests)
  ✓ tests/unit/mobileWallpaperPreviewPage.spec.js (13 tests)
  ✓ tests/unit/scraper.spec.js (10 tests)
- ✓ tests/unit/badgeEngine.spec.js (9 tests)
+ ✓ tests/unit/canvasEngine.spec.js (13 tests)
  ✓ tests/unit/storage.spec.js (9 tests)
+ ✓ tests/unit/youtubeService.spec.js (14 tests)
  ✓ tests/unit/milestoneEngine.spec.js (10 tests)
+ ✓ tests/unit/customWallpaperImage.spec.js (5 tests)
+ ✓ tests/unit/multiSourceModel.spec.js (8 tests)
+ ✓ tests/unit/badgeEngine.spec.js (9 tests)
  ✓ tests/unit/ipConfig.spec.js (11 tests)
- ✓ tests/unit/goalValidation.spec.js (6 tests)
  ✓ tests/unit/syllabusParser.spec.js (6 tests)
  ✓ tests/unit/assessmentDetector.spec.js (7 tests)
+ ✓ tests/unit/goalValidation.spec.js (6 tests)
 
- Test Files  15 passed (15)
-      Tests  153 passed (153)
+ Test Files  19 passed (19)
+      Tests  187 passed (187)
 ```
 
 ---

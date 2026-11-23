@@ -113,6 +113,13 @@
           </v-card>
         </v-col>
       </v-row>
+
+      <!-- Advanced Color Customization & Presets -->
+      <WallpaperColorControls
+        v-if="goal"
+        v-model="goal.customColors"
+        class="mt-4 pt-3 border-t"
+      />
     </div>
 
     <!-- ==========================================
@@ -169,6 +176,13 @@
           </v-card>
         </v-col>
       </v-row>
+
+      <!-- Advanced Color Customization & Presets -->
+      <WallpaperColorControls
+        v-if="goal"
+        v-model="goal.customColors"
+        class="mt-4 pt-3 border-t"
+      />
     </div>
 
     <!-- ==========================================
@@ -184,93 +198,20 @@
         </span>
       </div>
 
-      <!-- Upload Dropzone / Existing Photo State -->
+      <!-- Temporary In-Memory Custom Wallpaper Image Component -->
       <v-sheet
         color="surface-variant"
         class="pa-4 rounded-xl border d-flex flex-column align-center text-center justify-center position-relative"
         style="min-height: 180px;"
       >
-        <input
-          ref="fileInputRef"
-          type="file"
-          accept="image/png, image/jpeg, image/jpg, image/webp"
-          class="d-none"
-          @change="handleImageUpload"
+        <CustomWallpaperImage
+          v-if="goal"
+          v-model="goal.customImageUrl"
+          @image-selected="onImageSelected"
+          @image-cleared="onImageCleared"
         />
-
-        <!-- State A: Photo is already loaded -->
-        <div v-if="goal?.customImageUrl" class="w-100 d-flex flex-column align-center">
-          <div class="custom-photo-preview mb-3 rounded-lg overflow-hidden border shadow-sm position-relative">
-            <img
-              :src="goal.customImageUrl"
-              alt="Custom uploaded wallpaper preview"
-              class="w-100 h-100 object-cover"
-            />
-            <div class="photo-overlay-badge">
-              <v-icon icon="mdi-check-circle" color="success" size="14" class="me-1" />
-              Active on Wallpaper
-            </div>
-          </div>
-
-          <div class="d-flex align-center gap-2 flex-wrap justify-center">
-            <v-btn
-              size="small"
-              variant="tonal"
-              color="primary"
-              prepend-icon="mdi-camera-retake-outline"
-              class="font-weight-medium"
-              :loading="isUploading"
-              @click="triggerFileInput"
-            >
-              Replace Photo
-            </v-btn>
-            <v-btn
-              size="small"
-              variant="outlined"
-              color="error"
-              prepend-icon="mdi-trash-can-outline"
-              class="font-weight-medium"
-              @click="removeCustomImage"
-            >
-              Remove & Drop From Directory
-            </v-btn>
-          </div>
-
-          <p class="text-caption text-medium-emphasis mt-3 mb-0" style="font-size: 0.725rem !important;">
-            <v-icon icon="mdi-shield-check" color="success" size="14" class="me-1" />
-            Temporary server file: <strong>{{ goal?.customImageFilename || 'in-memory' }}</strong>. Automatically dropped from directory when wallpaper is generated/downloaded.
-          </p>
-        </div>
-
-        <!-- State B: No Photo Uploaded Yet -->
-        <div v-else class="py-2">
-          <v-avatar color="primary" size="48" class="mb-3 shadow-orange">
-            <v-icon icon="mdi-cloud-upload-outline" color="white" size="26" />
-          </v-avatar>
-
-          <h3 class="text-subtitle-2 font-weight-bold text-primary-text mb-1">
-            Choose Any Photo for Your Background
-          </h3>
-          <p class="text-caption text-medium-emphasis mb-3 max-w-sm mx-auto">
-            Upload your favorite picture. Our engine automatically applies an atmospheric scrim to keep your goal countdown, badges, and milestones 100% readable.
-          </p>
-
-          <v-btn
-            color="primary"
-            variant="flat"
-            size="default"
-            prepend-icon="mdi-folder-image"
-            class="font-weight-bold shadow-orange px-5"
-            :loading="isUploading"
-            @click="triggerFileInput"
-          >
-            Select Image (PNG, JPG, WebP)
-          </v-btn>
-
-          <div class="d-flex align-center justify-center gap-1 mt-3 text-caption text-medium-emphasis" style="font-size: 0.725rem !important;">
-            <v-icon icon="mdi-clock-outline" size="13" />
-            <span>Short-time storage: File is automatically dropped from directory upon download.</span>
-          </div>
+        <div v-else class="text-caption text-medium-emphasis">
+          Goal not initialized.
         </div>
       </v-sheet>
     </div>
@@ -280,7 +221,8 @@
 <script setup>
 import { ref } from 'vue';
 import { getAllThemes, getAllColorThemes } from '../../services/themeRegistry.js';
-import { apiFetch, getApiUrl, cleanupTempImageApi } from '../../services/apiClient.js';
+import CustomWallpaperImage from './CustomWallpaperImage.vue';
+import WallpaperColorControls from './WallpaperColorControls.vue';
 
 const props = defineProps({
   modelValue: {
@@ -305,7 +247,14 @@ const colorThemes = getAllColorThemes();
 function selectTheme(themeId) {
   // If user picks a theme or color, clear custom image
   if (props.goal && props.goal.customImageUrl) {
-    removeCustomImage();
+    if (props.goal.customImageUrl.startsWith('blob:')) {
+      try {
+        URL.revokeObjectURL(props.goal.customImageUrl);
+      } catch {
+        // ignore
+      }
+    }
+    props.goal.customImageUrl = null;
   }
   emit('update:modelValue', themeId);
   emit('change', themeId);
@@ -316,67 +265,14 @@ function makeGradient(colors) {
   return `linear-gradient(135deg, ${colors.join(', ')})`;
 }
 
-function triggerFileInput() {
-  fileInputRef.value?.click();
+function onImageSelected(data) {
+  if (props.goal) {
+    props.goal.customImageUrl = data.objectUrl;
+  }
+  activeMode.value = 'custom';
 }
 
-async function handleImageUpload(e) {
-  const file = e.target.files?.[0];
-  if (!file) return;
-
-  isUploading.value = true;
-
-  try {
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const base64Data = reader.result;
-
-      try {
-        const response = await apiFetch('/api/wallpaper/upload-temp', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            image: base64Data,
-            originalName: file.name
-          })
-        });
-
-        const data = await response.json();
-        if (data.success && data.fileUrl) {
-          if (props.goal) {
-            props.goal.customImageUrl = getApiUrl(data.fileUrl);
-            props.goal.customImageFilename = data.filename;
-          }
-        } else {
-          // Client-side base64 fallback if server is offline
-          if (props.goal) {
-            props.goal.customImageUrl = base64Data;
-          }
-        }
-      } catch {
-        // Fallback to local memory base64
-        if (props.goal) {
-          props.goal.customImageUrl = base64Data;
-        }
-      }
-      isUploading.value = false;
-      activeMode.value = 'custom';
-    };
-    reader.readAsDataURL(file);
-  } catch {
-    isUploading.value = false;
-  }
-}
-
-async function removeCustomImage() {
-  if (props.goal?.customImageFilename) {
-    try {
-      cleanupTempImageApi(props.goal.customImageFilename);
-    } catch {
-      // ignore
-    }
-    props.goal.customImageFilename = null;
-  }
+function onImageCleared() {
   if (props.goal) {
     props.goal.customImageUrl = null;
   }

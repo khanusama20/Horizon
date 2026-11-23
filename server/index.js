@@ -5,6 +5,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { extractCourseMetadata, validateCourseUrl, extractSlugTitle } from './scraper.js';
+import { parseYouTubeUrl, fetchYouTubePlaylist, fetchYouTubeSingleVideo } from './youtubeService.js';
 import { IP_CONFIG } from '../src/config/ipConfig.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -129,6 +130,71 @@ app.post('/api/course-info/extract', async (req, res) => {
       error: `Internal server error during metadata extraction: ${err.message}`
     });
   }
+});
+
+/**
+ * YouTube Playlist Ingestion Endpoint
+ * POST /api/youtube/playlist-info
+ */
+app.post('/api/youtube/playlist-info', async (req, res) => {
+  const { url } = req.body || {};
+  if (!url || typeof url !== 'string') {
+    return res.status(400).json({ success: false, error: 'Missing required "url" parameter.' });
+  }
+
+  const parsed = parseYouTubeUrl(url);
+  if (!parsed.valid) {
+    return res.status(400).json({ success: false, error: parsed.error });
+  }
+
+  const apiKey = process.env.YOUTUBE_API_KEY || '';
+
+  if (parsed.type === 'video' && !parsed.playlistId) {
+    // Single video link
+    const result = await fetchYouTubeSingleVideo(parsed.videoId, apiKey);
+    if (!result.success) {
+      const status = result.missingKey ? 400 : (result.quotaExceeded ? 429 : 400);
+      return res.status(status).json(result);
+    }
+    return res.json(result);
+  }
+
+  // Playlist link
+  const result = await fetchYouTubePlaylist(parsed.playlistId, apiKey);
+  if (!result.success) {
+    const status = result.missingKey ? 400 : (result.quotaExceeded ? 429 : 400);
+    return res.status(status).json(result);
+  }
+  return res.json(result);
+});
+
+/**
+ * YouTube Single Video Info Endpoint
+ * POST /api/youtube/video-info
+ */
+app.post('/api/youtube/video-info', async (req, res) => {
+  const { url, videoId: directVideoId } = req.body || {};
+  let videoId = directVideoId;
+
+  if (!videoId && url) {
+    const parsed = parseYouTubeUrl(url);
+    if (!parsed.valid || !parsed.videoId) {
+      return res.status(400).json({ success: false, error: 'Invalid YouTube video URL.' });
+    }
+    videoId = parsed.videoId;
+  }
+
+  if (!videoId) {
+    return res.status(400).json({ success: false, error: 'Missing videoId or url parameter.' });
+  }
+
+  const apiKey = process.env.YOUTUBE_API_KEY || '';
+  const result = await fetchYouTubeSingleVideo(videoId, apiKey);
+  if (!result.success) {
+    const status = result.missingKey ? 400 : (result.quotaExceeded ? 429 : 400);
+    return res.status(status).json(result);
+  }
+  return res.json(result);
 });
 
 /**

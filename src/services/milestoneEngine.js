@@ -110,20 +110,25 @@ export function generateMilestonePlan(goal, referenceDate = new Date()) {
   if (N <= learningDays) {
     const dayInterval = learningDays / N;
 
-    rawSections.forEach((sectionTitle, idx) => {
+    rawSections.forEach((sectionItem, idx) => {
       const order = idx + 1;
       const targetDay = Math.min(learningDays, Math.max(1, Math.round(order * dayInterval)));
-      const type = classifySectionType(sectionTitle);
-      const isQuiz = type === 'assessment';
+      
+      const title = (typeof sectionItem === 'object' && sectionItem !== null) ? (sectionItem.title || '') : String(sectionItem);
+      const videoData = (typeof sectionItem === 'object' && sectionItem !== null && sectionItem.video) ? sectionItem.video : null;
 
-      const prevCompletedAt = completedByTitle.get(sectionTitle.toLowerCase().trim()) || completedByOrder.get(order);
+      const detectedType = classifySectionType(title);
+      const isQuiz = detectedType === 'assessment';
+      const type = videoData ? 'lesson' : detectedType;
+
+      const prevCompletedAt = completedByTitle.get(title.toLowerCase().trim()) || completedByOrder.get(order);
       const isCompleted = Boolean(prevCompletedAt);
 
-      milestones.push({
+      const milestone = {
         id: `ms-${order}`,
         order,
-        title: sectionTitle,
-        description: `Dedicated learning focus for Day ${targetDay}.`,
+        title,
+        description: videoData?.formattedDuration ? `Video Lesson • ${videoData.formattedDuration}` : `Dedicated learning focus for Day ${targetDay}.`,
         targetDay,
         dueDate: computeDueDate(referenceDate, targetDay),
         status: isCompleted ? 'completed' : 'pending',
@@ -131,7 +136,13 @@ export function generateMilestonePlan(goal, referenceDate = new Date()) {
         completedAt: isCompleted ? prevCompletedAt : null,
         type,
         isQuiz
-      });
+      };
+
+      if (videoData) {
+        milestone.video = videoData;
+      }
+
+      milestones.push(milestone);
     });
   } else {
     // Case 2: Sections greater than learning days (Bundle sections evenly into learning days)
@@ -145,17 +156,20 @@ export function generateMilestonePlan(goal, referenceDate = new Date()) {
       if (bundled.length === 0) continue;
 
       const order = milestones.length + 1;
-      const mainTitle = bundled.length === 1 ? bundled[0] : `${bundled[0]} (+${bundled.length - 1} more)`;
-      const description = bundled.length > 1 ? bundled.join(' • ') : `Complete ${bundled[0]}`;
+      const titles = bundled.map(s => (typeof s === 'object' && s !== null ? (s.title || '') : String(s)));
+      const mainTitle = titles.length === 1 ? titles[0] : `${titles[0]} (+${titles.length - 1} more)`;
+      const description = titles.length > 1 ? titles.join(' • ') : `Complete ${titles[0]}`;
+
+      const firstVideo = typeof bundled[0] === 'object' && bundled[0]?.video ? bundled[0].video : null;
 
       // Check if any section in bundle is an assessment
-      const hasAssessment = bundled.some(s => classifySectionType(s) === 'assessment');
-      const type = hasAssessment ? 'assessment' : 'learning';
+      const hasAssessment = titles.some(s => classifySectionType(s) === 'assessment');
+      const type = firstVideo ? 'lesson' : (hasAssessment ? 'assessment' : 'learning');
 
       const prevCompletedAt = completedByTitle.get(mainTitle.toLowerCase().trim()) || completedByOrder.get(order);
       const isCompleted = Boolean(prevCompletedAt);
 
-      milestones.push({
+      const milestone = {
         id: `ms-${order}`,
         order,
         title: mainTitle,
@@ -167,7 +181,13 @@ export function generateMilestonePlan(goal, referenceDate = new Date()) {
         completedAt: isCompleted ? prevCompletedAt : null,
         type,
         isQuiz: hasAssessment
-      });
+      };
+
+      if (firstVideo) {
+        milestone.video = firstVideo;
+      }
+
+      milestones.push(milestone);
     }
   }
 

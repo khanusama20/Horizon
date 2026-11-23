@@ -22,6 +22,8 @@ export function createDefaultGoal() {
     title: '',
     description: '',
     category: 'Learning',
+    sourceType: 'manual',
+    source: null,
     targetDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
     totalDays: 15,
     templateId: 'alpine-peak',
@@ -29,8 +31,75 @@ export function createDefaultGoal() {
     courseMetadata: null,
     milestones: [],
     streakDays: 1,
+    customColors: null,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
+  };
+}
+
+/**
+ * Normalizes any legacy or multi-source goal record to the v2 provider-aware schema.
+ * Safely handles missing fields and preserves existing completion states without data loss.
+ * @param {object} goal - Raw goal record from storage or import
+ * @returns {object} Normalized goal record with discriminated sourceType
+ */
+export function normalizeGoal(goal) {
+  if (!goal || typeof goal !== 'object') {
+    return createDefaultGoal();
+  }
+
+  // 1. Discriminated sourceType
+  let sourceType = goal.sourceType;
+  if (!sourceType) {
+    if (goal.source?.provider) {
+      sourceType = goal.source.provider;
+    } else if (goal.courseMetadata?.sourceType === 'UDEMY' || goal.courseMetadata?.sourceUrl?.includes('udemy')) {
+      sourceType = 'udemy';
+    } else if (goal.courseMetadata?.sourceUrl?.includes('youtube') || goal.courseMetadata?.sourceUrl?.includes('youtu.be')) {
+      sourceType = 'youtube';
+    } else {
+      sourceType = 'manual';
+    }
+  }
+  sourceType = String(sourceType).toLowerCase();
+
+  // 2. Structured source metadata
+  const source = goal.source || {
+    provider: sourceType,
+    url: goal.courseMetadata?.sourceUrl || '',
+    externalId: goal.courseMetadata?.courseId || null,
+    title: goal.courseMetadata?.title || goal.title || '',
+    importedAt: goal.courseMetadata?.extractedAt || goal.createdAt || new Date().toISOString(),
+    extractionStatus: goal.courseMetadata ? 'success' : 'manual'
+  };
+
+  // 3. Normalized milestones preserving completion
+  const milestones = Array.isArray(goal.milestones)
+    ? goal.milestones.map((m, idx) => {
+        const isComp = Boolean(m.completed || m.status === 'completed');
+        return {
+          id: m.id || `ms-${m.order || idx + 1}`,
+          order: typeof m.order === 'number' ? m.order : idx + 1,
+          title: m.title || `Milestone ${idx + 1}`,
+          description: m.description || '',
+          targetDay: typeof m.targetDay === 'number' ? m.targetDay : 1,
+          dueDate: m.dueDate || new Date().toISOString(),
+          status: isComp ? 'completed' : 'pending',
+          completed: isComp,
+          completedAt: m.completedAt || (isComp ? new Date().toISOString() : null),
+          type: m.type || (m.isQuiz ? 'assessment' : (m.video ? 'lesson' : 'learning')),
+          isQuiz: Boolean(m.isQuiz || m.type === 'assessment'),
+          ...(m.video ? { video: m.video } : {})
+        };
+      })
+    : [];
+
+  return {
+    ...goal,
+    sourceType,
+    source,
+    milestones,
+    customColors: goal.customColors || null
   };
 }
 
@@ -130,7 +199,8 @@ export const storageService = {
           // Corrupted data structure
           return { success: false, data: null, wasCorrupted: true, error: 'Corrupted goal structure' };
         }
-        return { success: true, data: parsed };
+        const normalized = normalizeGoal(parsed);
+        return { success: true, data: normalized };
       } catch {
         // Corrupted JSON syntax: fallback gracefully
         return { success: false, data: null, wasCorrupted: true, error: 'Invalid JSON in storage' };
@@ -159,6 +229,11 @@ export const storageService = {
         ...goal,
         updatedAt: new Date().toISOString()
       };
+
+      // Requirement 8: Never store temporary custom image data or object URLs in LocalStorage
+      delete payload.customImageUrl;
+      delete payload.customImage;
+      delete payload.customImageFilename;
 
       window.localStorage.setItem(STORAGE_KEYS.GOAL, JSON.stringify(payload));
       return { success: true, data: payload };

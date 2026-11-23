@@ -30,89 +30,285 @@
       </v-tooltip>
     </div>
 
-    <!-- URL Ingestion Banner / Input -->
+    <!-- Source Ingestion Banner / Multi-Source Selector -->
     <v-sheet color="surface-variant" class="pa-4 rounded-lg mb-4" border>
+      <!-- Source Provider Selector Tabs -->
       <div class="d-flex align-center flex-wrap gap-2 mb-3">
-        <v-icon icon="mdi-link-variant" color="primary" size="18" class="flex-shrink-0" />
-        <span class="text-caption font-weight-bold text-uppercase tracking-wider text-primary-text text-wrap">
-          Smart Course URL Import (Udemy, Coursera, Web)
-        </span>
-      </div>
-
-      <div class="url-input-container">
-        <v-text-field
-          v-model="courseUrl"
-          placeholder="https://www.udemy.com/course/..."
-          density="comfortable"
-          variant="outlined"
-          hide-details="auto"
-          :error-messages="urlErrorMessage"
-          prepend-inner-icon="mdi-web"
-          class="url-import-field"
-          @keyup.enter="handleExtractUrl"
-        >
-          <template #append-inner>
-            <v-tooltip location="top" text="Import Course from URL">
-              <template #activator="{ props: tooltipProps }">
-                <span v-bind="tooltipProps" class="d-inline-flex">
-                  <v-btn
-                    icon="mdi-arrow-right"
-                    color="primary"
-                    variant="flat"
-                    size="small"
-                    :loading="isExtracting"
-                    :disabled="!courseUrl.trim()"
-                    class="url-import-btn shadow-orange"
-                    aria-label="Import course from URL"
-                    @click="handleExtractUrl"
-                  />
-                </span>
-              </template>
-            </v-tooltip>
-          </template>
-        </v-text-field>
-      </div>
-
-      <!-- Friendly Restricted Access / Fallback Notification Alert -->
-      <v-alert
-        v-if="urlImportNotice"
-        type="info"
-        variant="tonal"
-        color="primary"
-        density="comfortable"
-        class="mt-3 py-2 px-3 text-caption rounded-lg border-subtle"
-        closable
-        @click:close="urlImportNotice = ''"
-      >
-        <div class="d-flex flex-wrap align-center justify-space-between gap-2">
-          <span class="flex-grow-1 text-wrap">{{ urlImportNotice }}</span>
-          <v-btn
-            size="x-small"
-            variant="flat"
-            color="primary"
-            prepend-icon="mdi-format-list-bulleted-type"
-            class="font-weight-bold flex-shrink-0"
-            @click="openManualSyllabusModal"
-          >
-            Paste Syllabus
-          </v-btn>
-        </div>
-      </v-alert>
-
-      <!-- Fallback Quick Links -->
-      <div class="d-flex align-center justify-space-between mt-3 pt-1">
-        <span class="text-caption text-medium-emphasis">
-          Public metadata extracted via SSRF-safe proxy.
+        <span class="text-caption font-weight-bold text-uppercase tracking-wider text-medium-emphasis me-1">
+          Source:
         </span>
         <v-btn
-          variant="text"
           size="small"
+          :variant="selectedSourceMode === 'udemy' ? 'flat' : 'outlined'"
+          :color="selectedSourceMode === 'udemy' ? 'primary' : 'medium-emphasis'"
+          class="font-weight-bold rounded-pill text-none"
+          prepend-icon="mdi-school-outline"
+          @click="selectedSourceMode = 'udemy'"
+        >
+          Udemy & Web
+        </v-btn>
+        <v-btn
+          size="small"
+          :variant="selectedSourceMode === 'youtube' ? 'flat' : 'outlined'"
+          :color="selectedSourceMode === 'youtube' ? 'red-darken-1' : 'medium-emphasis'"
+          class="font-weight-bold rounded-pill text-none"
+          prepend-icon="mdi-youtube"
+          @click="selectedSourceMode = 'youtube'"
+        >
+          YouTube Playlist
+        </v-btn>
+        <v-btn
+          size="small"
+          :variant="selectedSourceMode === 'manual' ? 'flat' : 'outlined'"
+          :color="selectedSourceMode === 'manual' ? 'primary' : 'medium-emphasis'"
+          class="font-weight-bold rounded-pill text-none"
+          prepend-icon="mdi-format-list-bulleted-type"
+          @click="selectedSourceMode = 'manual'"
+        >
+          Manual Syllabus
+        </v-btn>
+      </div>
+
+      <!-- Mode 1: Udemy & Web URL Import -->
+      <div v-if="selectedSourceMode === 'udemy'">
+        <div class="d-flex align-center flex-wrap gap-2 mb-3">
+          <v-icon icon="mdi-link-variant" color="primary" size="18" class="flex-shrink-0" />
+          <span class="text-caption font-weight-bold text-uppercase tracking-wider text-primary-text text-wrap">
+            Smart Course URL Import (Udemy, Coursera, Web)
+          </span>
+        </div>
+
+        <div class="url-input-container">
+          <v-text-field
+            v-model="courseUrl"
+            placeholder="https://www.udemy.com/course/..."
+            density="comfortable"
+            variant="outlined"
+            hide-details="auto"
+            :error-messages="urlErrorMessage"
+            prepend-inner-icon="mdi-web"
+            class="url-import-field"
+            @keyup.enter="handleExtractUrl"
+          >
+            <template #append-inner>
+              <v-tooltip location="top" text="Import Course from URL">
+                <template #activator="{ props: tooltipProps }">
+                  <span v-bind="tooltipProps" class="d-inline-flex">
+                    <v-btn
+                      icon="mdi-arrow-right"
+                      color="primary"
+                      variant="flat"
+                      size="small"
+                      :loading="isExtracting"
+                      :disabled="!courseUrl.trim()"
+                      class="url-import-btn shadow-orange"
+                      aria-label="Import course from URL"
+                      @click="handleExtractUrl"
+                    />
+                  </span>
+                </template>
+              </v-tooltip>
+            </template>
+          </v-text-field>
+        </div>
+
+        <!-- Friendly Restricted Access / Fallback Notification Alert -->
+        <v-alert
+          v-if="urlImportNotice"
+          type="info"
+          variant="tonal"
           color="primary"
-          prepend-icon="mdi-text-box-outline"
-          class="px-2 font-weight-bold"
+          density="comfortable"
+          class="mt-3 py-2 px-3 text-caption rounded-lg border-subtle"
+          closable
+          @click:close="urlImportNotice = ''"
+        >
+          <div class="d-flex flex-wrap align-center justify-space-between gap-2">
+            <span class="flex-grow-1 text-wrap">{{ urlImportNotice }}</span>
+            <v-btn
+              size="x-small"
+              variant="flat"
+              color="primary"
+              prepend-icon="mdi-format-list-bulleted-type"
+              class="font-weight-bold flex-shrink-0"
+              @click="openManualSyllabusModal"
+            >
+              Paste Syllabus
+            </v-btn>
+          </div>
+        </v-alert>
+
+        <!-- Fallback Quick Links -->
+        <div class="d-flex align-center justify-space-between mt-3 pt-1">
+          <span class="text-caption text-medium-emphasis">
+            Public metadata extracted via SSRF-safe proxy.
+          </span>
+          <v-btn
+            variant="text"
+            size="small"
+            color="primary"
+            prepend-icon="mdi-text-box-outline"
+            class="px-2 font-weight-bold"
+            @click="openManualSyllabusModal"
+          >
+            Paste Syllabus Outline
+          </v-btn>
+        </div>
+      </div>
+
+      <!-- Mode 2: YouTube Playlist & Video Import -->
+      <div v-else-if="selectedSourceMode === 'youtube'">
+        <div class="d-flex align-center flex-wrap gap-2 mb-3">
+          <v-icon icon="mdi-youtube" color="red" size="20" class="flex-shrink-0" />
+          <span class="text-caption font-weight-bold text-uppercase tracking-wider text-primary-text text-wrap">
+            YouTube Playlist & Video Import (Official Data API v3)
+          </span>
+        </div>
+
+        <div class="url-input-container">
+          <v-text-field
+            v-model="youtubeUrl"
+            placeholder="https://www.youtube.com/playlist?list=... or watch?v=..."
+            density="comfortable"
+            variant="outlined"
+            hide-details="auto"
+            :error-messages="youtubeErrorMessage"
+            prepend-inner-icon="mdi-youtube"
+            class="url-import-field"
+            @keyup.enter="handleExtractYouTube"
+          >
+            <template #append-inner>
+              <v-tooltip location="top" text="Import YouTube Playlist">
+                <template #activator="{ props: tooltipProps }">
+                  <span v-bind="tooltipProps" class="d-inline-flex">
+                    <v-btn
+                      icon="mdi-arrow-right"
+                      color="red-darken-1"
+                      variant="flat"
+                      size="small"
+                      :loading="isExtractingYouTube"
+                      :disabled="!youtubeUrl.trim()"
+                      class="url-import-btn shadow-sm"
+                      aria-label="Import YouTube playlist"
+                      @click="handleExtractYouTube"
+                    />
+                  </span>
+                </template>
+              </v-tooltip>
+            </template>
+          </v-text-field>
+        </div>
+
+        <!-- Missing API Key Notice / Fallback Alert -->
+        <v-alert
+          v-if="youtubeNotice"
+          type="warning"
+          variant="tonal"
+          color="warning"
+          density="comfortable"
+          class="mt-3 py-2 px-3 text-caption rounded-lg border-subtle"
+          closable
+          @click:close="youtubeNotice = ''"
+        >
+          <div class="d-flex flex-wrap align-center justify-space-between gap-2">
+            <span class="flex-grow-1 text-wrap">{{ youtubeNotice }}</span>
+            <v-btn
+              size="x-small"
+              variant="flat"
+              color="primary"
+              prepend-icon="mdi-format-list-bulleted-type"
+              class="font-weight-bold flex-shrink-0"
+              @click="openManualSyllabusModal"
+            >
+              Use Manual Syllabus
+            </v-btn>
+          </div>
+        </v-alert>
+
+        <!-- YouTube Extracted Playlist Review Section -->
+        <div v-if="youtubeExtractedData" class="mt-4 pa-3 bg-surface rounded-lg border">
+          <div class="d-flex flex-wrap align-center justify-space-between gap-2 mb-2">
+            <div>
+              <h4 class="text-subtitle-2 font-weight-bold text-primary-text mb-0">
+                {{ youtubeExtractedData.title }}
+              </h4>
+              <span class="text-caption text-medium-emphasis">
+                {{ youtubeExtractedData.channelTitle ? `${youtubeExtractedData.channelTitle} • ` : '' }}
+                {{ youtubeReviewVideos.length }} Videos • Total Duration: {{ youtubeExtractedData.formattedTotalDuration }}
+              </span>
+            </div>
+            <v-btn
+              size="small"
+              color="primary"
+              variant="flat"
+              prepend-icon="mdi-calendar-check"
+              class="font-weight-bold shadow-orange"
+              @click="applyYouTubeMilestones"
+            >
+              Generate Milestones ({{ youtubeReviewVideos.length }} Lessons)
+            </v-btn>
+          </div>
+
+          <p class="text-caption text-medium-emphasis mb-2">
+            Review video lessons below. You can remove any unwanted videos before creating milestones:
+          </p>
+
+          <!-- Review Video List -->
+          <div class="max-h-200 overflow-y-auto d-flex flex-column gap-1 pe-1">
+            <div
+              v-for="(vid, vIdx) in youtubeReviewVideos"
+              :key="vid.videoId"
+              class="d-flex align-center justify-space-between pa-2 rounded bg-surface-variant text-caption"
+            >
+              <div class="d-flex align-center gap-2 min-w-0 me-2">
+                <span class="text-primary font-weight-bold flex-shrink-0">{{ vIdx + 1 }}.</span>
+                <span class="font-weight-medium text-truncate">{{ vid.title }}</span>
+                <span class="text-medium-emphasis flex-shrink-0">({{ vid.formattedDuration }})</span>
+              </div>
+              <v-btn
+                icon="mdi-close"
+                size="x-small"
+                variant="text"
+                color="error"
+                title="Remove video from plan"
+                @click="removeYouTubeReviewVideo(vIdx)"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div v-else class="d-flex align-center justify-space-between mt-3 pt-1">
+          <span class="text-caption text-medium-emphasis">
+            Official YouTube Data API v3 integration with ISO duration normalization.
+          </span>
+          <v-btn
+            variant="text"
+            size="small"
+            color="primary"
+            prepend-icon="mdi-text-box-outline"
+            class="px-2 font-weight-bold"
+            @click="openManualSyllabusModal"
+          >
+            Paste Syllabus Outline
+          </v-btn>
+        </div>
+      </div>
+
+      <!-- Mode 3: Manual Syllabus Directly -->
+      <div v-else class="text-center py-2">
+        <v-icon icon="mdi-format-list-bulleted-type" color="primary" size="32" class="mb-2" />
+        <h4 class="text-subtitle-2 font-weight-bold mb-1">Manual Course & Syllabus Outline</h4>
+        <p class="text-caption text-medium-emphasis mb-3 max-w-400 mx-auto">
+          Paste your course outline, book chapters, or certification modules directly. Our regex parser automatically paces your lessons.
+        </p>
+        <v-btn
+          color="primary"
+          variant="flat"
+          prepend-icon="mdi-pencil-box-outline"
+          class="font-weight-bold shadow-orange"
           @click="openManualSyllabusModal"
         >
-          Paste Syllabus Outline
+          Open Quick-Syllabus Parser
         </v-btn>
       </div>
     </v-sheet>
@@ -322,12 +518,21 @@ const props = defineProps({
 const emit = defineEmits(['save-goal', 'plan-generated']);
 
 const formRef = ref(null);
+const selectedSourceMode = ref(props.goal?.sourceType || 'udemy');
 const courseUrl = ref('');
 const isExtracting = ref(false);
 const urlErrorMessage = ref('');
 const urlImportNotice = ref('');
 const isRestrictedFallback = ref(false);
 const showSyllabusModal = ref(false);
+
+// YouTube Reactive State
+const youtubeUrl = ref('');
+const isExtractingYouTube = ref(false);
+const youtubeErrorMessage = ref('');
+const youtubeNotice = ref('');
+const youtubeExtractedData = ref(null);
+const youtubeReviewVideos = ref([]);
 
 const snackbar = ref({
   show: false,
@@ -431,7 +636,16 @@ async function handleExtractUrl() {
     }
 
     // Always preserve the entered URL in metadata
-    if (!props.goal.courseMetadata) {
+    props.goal.sourceType = 'manual';
+  props.goal.source = {
+    provider: 'manual',
+    url: courseUrl.value.trim() || null,
+    title: props.goal.title || customTitle || 'Custom Syllabus Course',
+    importedAt: new Date().toISOString(),
+    extractionStatus: 'manual'
+  };
+
+  if (!props.goal.courseMetadata) {
       props.goal.courseMetadata = {
         sourceUrl: url,
         sourceType: result?.partialData?.sourceType || 'UDEMY',
@@ -477,6 +691,15 @@ async function handleExtractUrl() {
       props.goal.description = data.description;
     }
 
+    props.goal.sourceType = 'udemy';
+    props.goal.source = {
+      provider: 'udemy',
+      url,
+      externalId: data.courseId || null,
+      title: data.title || props.goal.title,
+      importedAt: new Date().toISOString(),
+      extractionStatus: 'success'
+    };
     props.goal.courseMetadata = data;
 
     if (result.fallbackRecommended || (data.rawSections && data.rawSections.length === 0)) {
@@ -513,6 +736,121 @@ async function handleExtractUrl() {
 }
 
 /**
+ * YouTube Playlist Ingestion Handler calling Express API /api/youtube/playlist-info
+ */
+async function handleExtractYouTube() {
+  const url = youtubeUrl.value.trim();
+  youtubeErrorMessage.value = '';
+  youtubeNotice.value = '';
+  youtubeExtractedData.value = null;
+  youtubeReviewVideos.value = [];
+
+  if (!url) {
+    youtubeErrorMessage.value = 'Please enter a YouTube playlist or video link';
+    return;
+  }
+
+  isExtractingYouTube.value = true;
+
+  try {
+    const response = await apiFetch('/api/youtube/playlist-info', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    });
+
+    let result = null;
+    try {
+      result = await response.json();
+    } catch {
+      result = { success: false, error: 'Failed to parse YouTube API response' };
+    }
+
+    if (!response.ok || !result.success) {
+      if (result.missingKey) {
+        youtubeNotice.value = result.error;
+      } else {
+        youtubeErrorMessage.value = result.error || 'Failed to extract YouTube playlist';
+      }
+      return;
+    }
+
+    // Success
+    const data = result.data;
+    youtubeExtractedData.value = data;
+    youtubeReviewVideos.value = [...(data.videos || [])];
+
+    if (data.title && (!props.goal.title || props.goal.title === '')) {
+      props.goal.title = data.title;
+    }
+    if (data.description && !props.goal.description) {
+      props.goal.description = data.description.slice(0, 200);
+    }
+
+    snackbar.value = {
+      show: true,
+      message: `Extracted ${data.totalVideos} videos from "${data.title}"! Review and confirm to generate milestones.`,
+      color: 'success'
+    };
+  } catch (err) {
+    youtubeErrorMessage.value = `Connection error: ${err.message}`;
+  } finally {
+    isExtractingYouTube.value = false;
+  }
+}
+
+function removeYouTubeReviewVideo(index) {
+  youtubeReviewVideos.value.splice(index, 1);
+}
+
+function applyYouTubeMilestones() {
+  if (!youtubeExtractedData.value || youtubeReviewVideos.value.length === 0) return;
+
+  const data = youtubeExtractedData.value;
+  const videos = youtubeReviewVideos.value;
+
+  props.goal.sourceType = 'youtube';
+  props.goal.source = {
+    provider: 'youtube',
+    url: youtubeUrl.value.trim(),
+    externalId: data.playlistId || null,
+    title: data.title,
+    channelTitle: data.channelTitle,
+    importedAt: new Date().toISOString(),
+    extractionStatus: 'success',
+    totalVideos: videos.length
+  };
+
+  const rawSections = videos.map(v => ({
+    title: v.title,
+    video: {
+      videoId: v.videoId,
+      videoUrl: v.videoUrl,
+      durationSeconds: v.durationSeconds,
+      formattedDuration: v.formattedDuration
+    }
+  }));
+
+  props.goal.courseMetadata = {
+    sourceType: 'YOUTUBE',
+    sourceUrl: youtubeUrl.value.trim(),
+    title: data.title,
+    totalSections: videos.length,
+    rawSections,
+    extractedAt: new Date().toISOString()
+  };
+
+  props.goal.milestones = generateMilestonePlan(props.goal);
+  emit('plan-generated');
+
+  snackbar.value = {
+    show: true,
+    message: `Generated milestone plan for ${videos.length} YouTube lessons!`,
+    color: 'success'
+  };
+}
+
+/**
  * Applies sections parsed from the Quick-Syllabus modal
  */
 function handleApplySections(payload) {
@@ -524,6 +862,15 @@ function handleApplySections(payload) {
   if (customTitle && (!props.goal.title || props.goal.title === '')) {
     props.goal.title = customTitle;
   }
+
+  props.goal.sourceType = 'manual';
+  props.goal.source = {
+    provider: 'manual',
+    url: courseUrl.value.trim() || null,
+    title: props.goal.title || customTitle || 'Custom Syllabus Course',
+    importedAt: new Date().toISOString(),
+    extractionStatus: 'manual'
+  };
 
   if (!props.goal.courseMetadata) {
     props.goal.courseMetadata = {

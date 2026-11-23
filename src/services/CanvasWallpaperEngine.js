@@ -198,14 +198,27 @@ export class CanvasWallpaperEngine {
 
       ctx.clearRect(0, 0, dim.width, dim.height);
 
-      // 3. Resolve Theme
+      // 3. Resolve Theme and Apply Optional Custom Colors
       const themeId = goal?.templateId || 'alpine-peak';
       const theme = getTheme(themeId);
-      const palette = theme.palette;
+      const palette = { ...theme.palette };
 
-      // 4. Draw Background: Custom Uploaded Photo or Procedural Theme
+      if (goal?.customColors) {
+        const c = goal.customColors;
+        if (c.heading) palette.primaryText = c.heading;
+        if (c.body) palette.secondaryText = c.body;
+        if (c.accent) {
+          palette.accentColor = c.accent;
+          palette.progressFill = c.accent;
+        }
+        if (c.card) palette.cardBackground = c.card;
+      }
+
+      // 4. Draw Background: Custom Uploaded Photo, Custom Color, or Procedural Nature Theme
       if (goal?.customImageUrl || goal?.customImage) {
         await this.drawCustomImageBackground(ctx, dim.width, dim.height, goal.customImageUrl || goal.customImage, theme);
+      } else if (goal?.customColors?.background) {
+        this.drawColorBackground(ctx, dim.width, dim.height, goal.customColors.background);
       } else {
         theme.drawBackground(ctx, dim.width, dim.height, dim.orientation);
       }
@@ -299,6 +312,21 @@ export class CanvasWallpaperEngine {
         fallbackTheme.drawBackground(ctx, width, height);
       }
     }
+  }
+
+  /**
+   * Renders a user-selected custom color background with subtle vignette depth
+   */
+  static drawColorBackground(ctx, width, height, color) {
+    ctx.fillStyle = color;
+    ctx.fillRect(0, 0, width, height);
+
+    // Subtle vignette overlay to add depth
+    const vignette = ctx.createRadialGradient(width / 2, height / 2, width * 0.25, width / 2, height / 2, width * 0.85);
+    vignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    vignette.addColorStop(1, 'rgba(0, 0, 0, 0.40)');
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, width, height);
   }
 
   static loadImage(src) {

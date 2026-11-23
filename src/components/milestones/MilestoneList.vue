@@ -142,11 +142,25 @@
                   size="x-small"
                   :color="typeColor(milestone.type)"
                   variant="tonal"
-                  class="font-weight-medium text-capitalize text-white"
+                  class="font-weight-medium text-capitalize"
                 >
                   <v-icon :icon="typeIcon(milestone.type)" start size="12" />
                   {{ milestone.type }}
                 </v-chip>
+
+                <!-- Watch Video Link if YouTube Lesson -->
+                <a
+                  v-if="milestone.video?.videoUrl"
+                  :href="milestone.video.videoUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="d-inline-flex align-center text-decoration-none text-caption font-weight-bold text-red-darken-1 hover-underline"
+                  style="gap: 4px;"
+                >
+                  <v-icon icon="mdi-youtube" size="16" color="red" />
+                  <span>Watch Video ({{ milestone.video.formattedDuration || 'Play' }})</span>
+                  <v-icon icon="mdi-open-in-new" size="12" />
+                </a>
 
                 <!-- Completed Timestamp -->
                 <span
@@ -203,12 +217,14 @@ function isNextFocus(milestone) {
 function typeColor(type) {
   if (type === 'assessment') return 'warning';
   if (type === 'review') return 'secondary';
+  if (type === 'lesson') return 'error';
   return 'primary';
 }
 
 function typeIcon(type) {
   if (type === 'assessment') return 'mdi-clipboard-check-outline';
   if (type === 'review') return 'mdi-book-sync-outline';
+  if (type === 'lesson') return 'mdi-youtube';
   return 'mdi-book-open-page-variant-outline';
 }
 

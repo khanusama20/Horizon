@@ -56,6 +56,21 @@ export async function extractCourseMetadataApi(url) {
 }
 
 /**
+ * Extracts YouTube playlist / video metadata via the backend YouTube service
+ * 
+ * @param {string} url - YouTube URL
+ * @returns {Promise<any>}
+ */
+export async function fetchYouTubePlaylistApi(url) {
+  const res = await apiFetch('/api/youtube/playlist-info', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url })
+  });
+  return res.json();
+}
+
+/**
  * Uploads a temporary wallpaper image to the backend server.
  * 
  * @param {string} base64Data - Base64 encoded image string
