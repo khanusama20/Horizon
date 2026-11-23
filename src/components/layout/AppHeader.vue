@@ -50,6 +50,28 @@
       </v-tooltip>
     </div>
 
+    <!-- Server IP & API Status Badge -->
+    <div class="d-none d-lg-flex align-center me-3">
+      <v-tooltip location="bottom" :text="`Backend Server: ${serverStatusText} (Configured in src/config/ipConfig.js)`">
+        <template #activator="{ props }">
+          <v-chip
+            v-bind="props"
+            size="small"
+            variant="tonal"
+            :color="isServerOnline ? 'primary' : 'medium-emphasis'"
+            class="font-weight-medium"
+          >
+            <v-icon
+              :icon="isServerOnline ? 'mdi-server-network' : 'mdi-server-network-off'"
+              start
+              size="16"
+            />
+            {{ displayServerIp }}
+          </v-chip>
+        </template>
+      </v-tooltip>
+    </div>
+
     <!-- Storage Status Badge -->
     <div class="d-none d-md-flex align-center me-3">
       <v-tooltip location="bottom" text="Client-side LocalStorage is active. Zero personal data leaves your device.">
@@ -89,6 +111,10 @@
 </template>
 
 <script setup>
+import { ref, computed, onMounted } from 'vue';
+import { IP_CONFIG, getServerBaseUrl } from '../../config/ipConfig.js';
+import { checkServerHealth } from '../../services/apiClient.js';
+
 const props = defineProps({
   storageStatus: {
     type: Object,
@@ -105,6 +131,26 @@ const props = defineProps({
 });
 
 defineEmits(['reset-goal', 'start-demo', 'exit-demo', 'open-preview', 'back-to-dashboard']);
+
+const isServerOnline = ref(false);
+
+const displayServerIp = computed(() => {
+  return `${IP_CONFIG.serverIp}:${IP_CONFIG.serverPort}`;
+});
+
+const serverStatusText = computed(() => {
+  const base = getServerBaseUrl() || 'Relative Proxy (/api)';
+  return `${base} (${isServerOnline.value ? 'Online' : 'Checking / Standby'})`;
+});
+
+onMounted(async () => {
+  try {
+    const health = await checkServerHealth();
+    isServerOnline.value = health.online;
+  } catch {
+    isServerOnline.value = false;
+  }
+});
 </script>
 
 <style scoped>

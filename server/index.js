@@ -5,6 +5,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { extractCourseMetadata, validateCourseUrl, extractSlugTitle } from './scraper.js';
+import { IP_CONFIG } from '../src/config/ipConfig.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -39,6 +40,7 @@ export function cleanupStaleTempFiles(maxAgeMs = 5 * 60 * 1000) {
     const files = fs.readdirSync(UPLOADS_TEMP_DIR);
     const now = Date.now();
     for (const file of files) {
+      if (file === '.gitkeep' || file.startsWith('.')) continue;
       const filePath = path.join(UPLOADS_TEMP_DIR, file);
       if (fs.existsSync(filePath)) {
         const stat = fs.statSync(filePath);
@@ -62,7 +64,7 @@ const app = express();
 // Determine Host & IP mode from CLI flags or env
 const isIpMode = process.argv.includes('--ip') || process.env.HOST_MODE === 'ip' || process.env.HOST === '0.0.0.0';
 const HOST = isIpMode ? '0.0.0.0' : (process.env.HOST || '127.0.0.1');
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || IP_CONFIG.serverPort || 3001;
 const localIp = getLocalIpAddress();
 
 // Middleware

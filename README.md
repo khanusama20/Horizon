@@ -118,8 +118,22 @@ horizon/
    ```bash
    npm run dev
    ```
-   - **Frontend App**: `http://localhost:5173/`
-   - **Course Ingestion API**: `http://localhost:3001/`
+   - **Frontend App**: `http://localhost:5173/` (or LAN IP)
+   - **Course Ingestion API**: `http://localhost:3001/` (or LAN IP)
+
+### 🌐 Centralized Server IP Configuration
+
+To connect external devices (e.g. testing mobile wallpapers on your phone via Wi-Fi) or point to a remote server, edit [src/config/ipConfig.js](file:///c:/Users/MS%20Infra%20Works/OneDrive/Documents/Projects/horizon/src/config/ipConfig.js):
+
+```javascript
+export const IP_CONFIG = {
+  serverIp: '192.168.31.34', // <-- Your server IP address
+  serverPort: 3001,          // <-- Server port
+  protocol: 'http',
+  mode: 'direct'             // 'direct' | 'auto' | 'proxy'
+};
+```
+Both the Vue frontend API client and the Vite dev proxy automatically route all requests to this configured IP!
 
 ---
 
@@ -132,7 +146,7 @@ Horizon maintains an automated test suite with **100% pass rate** across all cor
 npm run test
 
 # Run Vitest in watch mode
-npx vitest
+npm run test:watch
 
 # Build production bundle
 npm run build
@@ -142,21 +156,22 @@ npm run build
 ```
  ✓ tests/unit/canvasEngine.spec.js (13 tests)
  ✓ tests/unit/wallpaperExportService.spec.js (19 tests)
- ✓ tests/unit/floatingDeviceSwitcher.spec.js (6 tests)
  ✓ tests/unit/visualStepper.spec.js (7 tests)
- ✓ tests/unit/block7Verification.spec.js (15 tests)
+ ✓ tests/unit/floatingDeviceSwitcher.spec.js (6 tests)
  ✓ tests/unit/demoPresentationMode.spec.js (12 tests)
+ ✓ tests/unit/block7Verification.spec.js (15 tests)
  ✓ tests/unit/mobileWallpaperPreviewPage.spec.js (13 tests)
  ✓ tests/unit/scraper.spec.js (10 tests)
- ✓ tests/unit/milestoneEngine.spec.js (10 tests)
  ✓ tests/unit/badgeEngine.spec.js (9 tests)
- ✓ tests/unit/goalValidation.spec.js (6 tests)
  ✓ tests/unit/storage.spec.js (9 tests)
+ ✓ tests/unit/milestoneEngine.spec.js (10 tests)
+ ✓ tests/unit/ipConfig.spec.js (11 tests)
+ ✓ tests/unit/goalValidation.spec.js (6 tests)
  ✓ tests/unit/syllabusParser.spec.js (6 tests)
  ✓ tests/unit/assessmentDetector.spec.js (7 tests)
 
- Test Files  14 passed (14)
-      Tests  142 passed (142)
+ Test Files  15 passed (15)
+      Tests  153 passed (153)
 ```
 
 ---

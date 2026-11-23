@@ -120,6 +120,7 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import DeviceMockupPreview from './DeviceMockupPreview.vue';
 import { getTheme } from '../../services/themeRegistry.js';
 import { wallpaperExportService } from '../../services/wallpaperExportService.js';
+import { cleanupTempImageApi } from '../../services/apiClient.js';
 
 const props = defineProps({
   goal: {
@@ -165,11 +166,7 @@ async function handleDownload() {
       // Auto-drop temporary custom photo from directory upon wallpaper download
       if (props.goal?.customImageFilename) {
         try {
-          fetch('/api/wallpaper/cleanup-temp', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ filename: props.goal.customImageFilename })
-          }).catch(() => {});
+          cleanupTempImageApi(props.goal.customImageFilename);
           props.goal.customImageFilename = null;
         } catch {
           // ignore

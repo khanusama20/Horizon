@@ -280,6 +280,7 @@
 <script setup>
 import { ref } from 'vue';
 import { getAllThemes, getAllColorThemes } from '../../services/themeRegistry.js';
+import { apiFetch, getApiUrl, cleanupTempImageApi } from '../../services/apiClient.js';
 
 const props = defineProps({
   modelValue: {
@@ -331,7 +332,7 @@ async function handleImageUpload(e) {
       const base64Data = reader.result;
 
       try {
-        const response = await fetch('/api/wallpaper/upload-temp', {
+        const response = await apiFetch('/api/wallpaper/upload-temp', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -343,7 +344,7 @@ async function handleImageUpload(e) {
         const data = await response.json();
         if (data.success && data.fileUrl) {
           if (props.goal) {
-            props.goal.customImageUrl = data.fileUrl;
+            props.goal.customImageUrl = getApiUrl(data.fileUrl);
             props.goal.customImageFilename = data.filename;
           }
         } else {
@@ -370,11 +371,7 @@ async function handleImageUpload(e) {
 async function removeCustomImage() {
   if (props.goal?.customImageFilename) {
     try {
-      fetch('/api/wallpaper/cleanup-temp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filename: props.goal.customImageFilename })
-      }).catch(() => {});
+      cleanupTempImageApi(props.goal.customImageFilename);
     } catch {
       // ignore
     }

@@ -310,6 +310,7 @@ import { ref, computed } from 'vue';
 import QuickSyllabusModal from './QuickSyllabusModal.vue';
 import { createSampleLlmGoal } from '../../services/sampleCourse.js';
 import { generateMilestonePlan } from '../../services/milestoneEngine.js';
+import { apiFetch } from '../../services/apiClient.js';
 
 const props = defineProps({
   goal: {
@@ -410,7 +411,7 @@ async function handleExtractUrl() {
   isExtracting.value = true;
 
   try {
-    const response = await fetch('/api/course-info/extract', {
+    const response = await apiFetch('/api/course-info/extract', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url })
