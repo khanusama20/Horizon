@@ -82,6 +82,12 @@ function handleCardKeydown(e) {
 }
 
 const previewBackground = computed(() => {
+  if (props.goal?.customImageUrl || props.goal?.customImage) {
+    return `url("${props.goal.customImageUrl || props.goal.customImage}") center/cover no-repeat`;
+  }
+  if (props.goal?.customColors?.background) {
+    return props.goal.customColors.background;
+  }
   const theme = getTheme(props.goal?.templateId || 'alpine-peak');
   const colors = theme?.palette?.previewGradient;
   if (colors && colors.length > 0) {

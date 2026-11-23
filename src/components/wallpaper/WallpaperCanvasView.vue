@@ -126,6 +126,9 @@ watch(
     props.goal.targetDate,
     props.goal.category,
     props.goal.milestones,
+    props.goal.customImageUrl,
+    props.goal.customImage,
+    props.goal.customColors,
     currentPreset.value,
     showSafeZones.value
   ],
@@ -133,6 +136,14 @@ watch(
     drawWallpaper();
   },
   { deep: true }
+);
+
+// Explicit watcher for custom photo updates
+watch(
+  () => [props.goal?.customImageUrl, props.goal?.customImage],
+  () => {
+    drawWallpaper();
+  }
 );
 
 onMounted(() => {

@@ -109,6 +109,9 @@ watch(
     props.goal.targetDate,
     props.goal.category,
     props.goal.milestones,
+    props.goal.customImageUrl,
+    props.goal.customImage,
+    props.goal.customColors,
     props.preset,
     props.showSafeZones
   ],
@@ -116,6 +119,14 @@ watch(
     renderMockup();
   },
   { deep: true }
+);
+
+// Explicit watcher for immediate custom photo updates
+watch(
+  () => [props.goal?.customImageUrl, props.goal?.customImage],
+  () => {
+    renderMockup();
+  }
 );
 
 onMounted(() => {

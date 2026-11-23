@@ -325,22 +325,51 @@ export class CanvasWallpaperEngine {
       if (typeof Image === 'undefined') {
         return resolve({ width: 1000, height: 1000 });
       }
+
       const img = new Image();
       img.crossOrigin = 'anonymous';
-      // Safety timeout for headless / test environments where DOM Image load events don't fire
-      const timer = setTimeout(() => {
-        resolve(img.width ? img : { width: 1080, height: 1920 });
-      }, 50);
 
-      img.onload = () => {
-        clearTimeout(timer);
+      let settled = false;
+      const onDone = () => {
+        if (settled) return;
+        settled = true;
         resolve(img);
       };
-      img.onerror = (e) => {
-        clearTimeout(timer);
-        reject(e);
+
+      const onError = (e) => {
+        if (settled) return;
+        settled = true;
+        reject(e || new Error('Image failed to load'));
       };
+
+      img.onload = onDone;
+      img.onerror = onError;
+
+      // In modern browsers, decode() provides faster and reliable GPU-ready decoding
+      if (typeof img.decode === 'function') {
+        img.decode().then(onDone).catch(() => {
+          // Fall back to onload if decode promise rejects
+        });
+      }
+
+      // In happy-dom / test environment where DOM load events don't fire for mock URLs:
+      if (typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'test') {
+        setTimeout(() => {
+          if (!settled) {
+            settled = true;
+            if (!img.width) img.width = 1080;
+            if (!img.height) img.height = 1920;
+            resolve(img);
+          }
+        }, 80);
+      }
+
       img.src = src;
+
+      // Check if image is already complete (e.g. data URI or cached)
+      if (img.complete && (img.naturalWidth || img.width)) {
+        onDone();
+      }
     });
   }
 

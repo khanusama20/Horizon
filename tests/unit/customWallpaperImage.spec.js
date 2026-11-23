@@ -104,5 +104,30 @@ describe('Temporary Custom Wallpaper Image (Part C)', () => {
         CanvasWallpaperEngine.loadImage = originalLoadImage;
       }
     });
+
+    it('successfully draws custom image and applies dark gradient overlay', async () => {
+      const mockCtx = {
+        fillStyle: '',
+        fillRect: vi.fn(),
+        createLinearGradient: vi.fn().mockReturnValue({ addColorStop: vi.fn() }),
+        drawImage: vi.fn()
+      };
+
+      const mockImg = {
+        width: 1920,
+        height: 1080
+      };
+
+      const originalLoadImage = CanvasWallpaperEngine.loadImage;
+      CanvasWallpaperEngine.loadImage = vi.fn().mockResolvedValue(mockImg);
+
+      try {
+        await CanvasWallpaperEngine.drawCustomImageBackground(mockCtx, 1080, 1920, 'blob:test', null);
+        expect(mockCtx.drawImage).toHaveBeenCalled();
+        expect(mockCtx.fillRect).toHaveBeenCalled(); // Gradient scrim applied
+      } finally {
+        CanvasWallpaperEngine.loadImage = originalLoadImage;
+      }
+    });
   });
 });

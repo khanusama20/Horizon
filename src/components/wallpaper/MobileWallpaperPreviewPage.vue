@@ -140,6 +140,9 @@ const snackbar = ref({
 });
 
 const activeThemeName = computed(() => {
+  if (props.goal?.customImageUrl || props.goal?.customImage) {
+    return 'Custom Photo';
+  }
   const theme = getTheme(props.goal?.templateId || 'alpine-peak');
   return theme?.name || 'Alpine Peak';
 });

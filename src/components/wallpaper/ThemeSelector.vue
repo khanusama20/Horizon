@@ -246,15 +246,17 @@ const colorThemes = getAllColorThemes();
 
 function selectTheme(themeId) {
   // If user picks a theme or color, clear custom image
-  if (props.goal && props.goal.customImageUrl) {
-    if (props.goal.customImageUrl.startsWith('blob:')) {
+  if (props.goal) {
+    const existing = props.goal.customImageUrl || props.goal.customImage;
+    if (existing && typeof existing === 'string' && existing.startsWith('blob:')) {
       try {
-        URL.revokeObjectURL(props.goal.customImageUrl);
+        URL.revokeObjectURL(existing);
       } catch {
         // ignore
       }
     }
     props.goal.customImageUrl = null;
+    props.goal.customImage = null;
   }
   emit('update:modelValue', themeId);
   emit('change', themeId);
@@ -268,14 +270,20 @@ function makeGradient(colors) {
 function onImageSelected(data) {
   if (props.goal) {
     props.goal.customImageUrl = data.objectUrl;
+    props.goal.customImage = data.objectUrl;
   }
   activeMode.value = 'custom';
+  emit('change', props.modelValue);
+  emit('image-selected', data);
 }
 
 function onImageCleared() {
   if (props.goal) {
     props.goal.customImageUrl = null;
+    props.goal.customImage = null;
   }
+  emit('change', props.modelValue);
+  emit('image-cleared');
 }
 </script>
 
