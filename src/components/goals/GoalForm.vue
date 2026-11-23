@@ -767,10 +767,14 @@ async function handleExtractYouTube() {
     }
 
     if (!response.ok || !result.success) {
-      if (result.missingKey) {
-        youtubeNotice.value = result.error;
+      const errObj = result.error;
+      const errMsg = typeof errObj === 'object' && errObj !== null ? errObj.message : (errObj || 'Failed to extract YouTube playlist');
+      const errCode = typeof errObj === 'object' && errObj !== null ? errObj.code : (result.code || '');
+
+      if (result.missingKey || errCode === 'MISSING_API_KEY') {
+        youtubeNotice.value = errMsg;
       } else {
-        youtubeErrorMessage.value = result.error || 'Failed to extract YouTube playlist';
+        youtubeErrorMessage.value = errMsg;
       }
       return;
     }
