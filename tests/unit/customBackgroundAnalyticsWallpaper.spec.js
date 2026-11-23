@@ -311,4 +311,79 @@ describe('Horizon Canvas Engine — Custom Background & Achievement Analytics (E
     // Background fill must use the custom color
     expect(mockCtx.fillRect).toHaveBeenCalled();
   });
+
+  // Requirement 13: Luxury Gold Medallions render vector rosettes and glyphs for all 5 tiers
+  it('Verification 13: drawLuxuryBadge and drawEmblemGlyph render luxury medallions for all tiers', () => {
+    const badgeKeys = ['FIRST_STEP', 'QUARTER_WAY', 'HALFWAY_HERO', 'ALMOST_THERE', 'ACHIEVER'];
+    const palette = { primaryText: '#FFFFFF', secondaryText: '#94A3B8', accentColor: '#F59E0B' };
+
+    badgeKeys.forEach((key) => {
+      const badgeUnlocked = { key, name: key, unlocked: true, thresholdPct: 50 };
+      const badgeLocked = { key, name: key, unlocked: false, thresholdPct: 50 };
+
+      // Render unlocked medallion
+      CanvasWallpaperEngine.drawLuxuryBadge(mockCtx, 200, 200, 46, badgeUnlocked, palette);
+      expect(mockCtx.arc).toHaveBeenCalled();
+      expect(mockCtx.fill).toHaveBeenCalled();
+
+      // Render locked medallion
+      CanvasWallpaperEngine.drawLuxuryBadge(mockCtx, 200, 200, 46, badgeLocked, palette);
+      expect(mockCtx.stroke).toHaveBeenCalled();
+    });
+  });
+
+  // Requirement 14: loadImage selectively sets crossOrigin only for remote http/https requests
+  it('Verification 14: loadImage applies crossOrigin only for http/https, never for blob: or data:', async () => {
+    const originalImage = global.Image;
+    let createdImages = [];
+
+    global.Image = class MockImage {
+      constructor() {
+        this.crossOrigin = null;
+        this.width = 1080;
+        this.height = 1920;
+        this.complete = true;
+        createdImages.push(this);
+      }
+    };
+
+    try {
+      // Case A: remote HTTPS URL -> crossOrigin must be 'anonymous'
+      await CanvasWallpaperEngine.loadImage('https://example.com/photo.jpg');
+      expect(createdImages[0].crossOrigin).toBe('anonymous');
+
+      // Case B: blob URL -> crossOrigin must NOT be set
+      await CanvasWallpaperEngine.loadImage('blob:http://localhost:5173/photo-uuid');
+      expect(createdImages[1].crossOrigin).toBeNull();
+
+      // Case C: base64 Data URL -> crossOrigin must NOT be set
+      await CanvasWallpaperEngine.loadImage('data:image/jpeg;base64,/9j/4AAQSkZJRgABA...');
+      expect(createdImages[2].crossOrigin).toBeNull();
+    } finally {
+      global.Image = originalImage;
+    }
+  });
+
+  // Requirement 15: Mobile layout scales content across vertical canvas without bottom void
+  it('Verification 15: mobile wallpaper distributes content across vertical canvas down to footer zone', async () => {
+    const goal = {
+      title: 'Java Multithreading & Concurrency Full Course',
+      totalDays: 15,
+      targetDate: new Date(Date.now() + 15 * 86400000).toISOString(),
+      milestones: [
+        { id: 'm1', order: 1, title: 'Introduction to Multithreading in Java | Process vs Thread', status: 'completed', completed: true },
+        { id: 'm2', order: 2, title: 'Java Thread Creation & Lifecycle Explained from Scratch', status: 'pending', completed: false }
+      ]
+    };
+
+    const res = await CanvasWallpaperEngine.renderWallpaper(mockCanvas, { goal, preset: 'MOBILE' });
+    expect(res.success).toBe(true);
+
+    // Verify footer branding is drawn near bottom (y >= 1800)
+    const brandingCall = mockCtx.fillText.mock.calls.find(call =>
+      typeof call[0] === 'string' && call[0].includes('HORIZON ACHIEVEMENT HUD')
+    );
+    expect(brandingCall).toBeDefined();
+    expect(brandingCall[2]).toBeGreaterThanOrEqual(1800); // Placed at ~1824px
+  });
 });

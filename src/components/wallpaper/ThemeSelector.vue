@@ -269,8 +269,9 @@ function makeGradient(colors) {
 
 function onImageSelected(data) {
   if (props.goal) {
-    props.goal.customImageUrl = data.objectUrl;
-    props.goal.customImage = data.objectUrl;
+    const activeUrl = data.dataUrl || data.objectUrl;
+    props.goal.customImageUrl = activeUrl;
+    props.goal.customImage = activeUrl;
   }
   activeMode.value = 'custom';
   emit('change', props.modelValue);

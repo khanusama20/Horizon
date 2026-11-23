@@ -160,17 +160,42 @@ function onFileSelected(event) {
     }
   }
 
-  // 4. Create in-memory temporary Object URL (zero server upload, zero LocalStorage)
+  // 4. Create in-memory temporary Data URL and Object URL (zero server upload, zero LocalStorage)
   try {
-    const objectUrl = URL.createObjectURL(file);
-    activeObjectUrl.value = objectUrl;
-    emit('update:modelValue', objectUrl);
-    emit('image-selected', {
-      objectUrl,
-      fileName: file.name,
-      fileSize: file.size,
-      fileType: file.type
-    });
+    let objectUrl = '';
+    try {
+      objectUrl = URL.createObjectURL(file);
+    } catch {
+      // ignore if objectUrl creation fails in some test environments
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result || objectUrl;
+      activeObjectUrl.value = dataUrl;
+      emit('update:modelValue', dataUrl);
+      emit('image-selected', {
+        objectUrl: dataUrl || objectUrl,
+        dataUrl,
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type
+      });
+    };
+    reader.onerror = () => {
+      // Fallback to objectUrl if FileReader encounters an issue
+      const fallbackUrl = objectUrl || '';
+      activeObjectUrl.value = fallbackUrl;
+      emit('update:modelValue', fallbackUrl);
+      emit('image-selected', {
+        objectUrl: fallbackUrl,
+        dataUrl: fallbackUrl,
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type
+      });
+    };
+    reader.readAsDataURL(file);
   } catch (err) {
     validationError.value = `Failed to process image: ${err.message}`;
   }

@@ -327,7 +327,11 @@ export class CanvasWallpaperEngine {
       }
 
       const img = new Image();
-      img.crossOrigin = 'anonymous';
+      // CRITICAL FIX: Only set crossOrigin = 'anonymous' for external http/https requests!
+      // Setting crossOrigin on blob: or data: URIs in Chromium/Safari triggers CORS / security load errors!
+      if (typeof src === 'string' && (src.startsWith('http://') || src.startsWith('https://'))) {
+        img.crossOrigin = 'anonymous';
+      }
 
       let settled = false;
       const onDone = () => {
@@ -527,36 +531,419 @@ export class CanvasWallpaperEngine {
   }
 
   /**
+   * Renders an authentic Luxury Gold Medallion badge on Canvas
+   * Features:
+   * - Cascading satin ribbon swallowtail tails
+   * - 16-point scalloped luxury gold rosette bezel
+   * - Metallic gold multi-stop specular bevel highlights
+   * - Deep obsidian/onyx center enamel coin face
+   * - Distinct vector emblem glyphs for each milestone tier:
+   *   * FIRST_STEP: Golden Sprout of Genesis
+   *   * QUARTER_WAY: Golden Navigator's Compass Rose
+   *   * HALFWAY_HERO: Golden Twin Mountain Peaks with Summit Flag
+   *   * ALMOST_THERE: Blazing Beacon / Torch of Triumph
+   *   * ACHIEVER: Imperial Laureled Sovereign Crown
+   * - Locked state: Brushed antique platinum/titanium with dark slate enamel
+   * 
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {number} cx - Center X
+   * @param {number} cy - Center Y
+   * @param {number} radius - Medallion coin radius
+   * @param {object} badge - Badge data model
+   * @param {object} palette - Theme palette
+   */
+  static drawLuxuryBadge(ctx, cx, cy, radius, badge, palette) {
+    const isUnlocked = Boolean(badge.unlocked);
+    ctx.save();
+
+    // 1. Cascading Satin Ribbon Tails (Swallowtails)
+    const ribbonLen = radius * 1.5;
+    const ribbonSpread = radius * 0.75;
+
+    // Left Ribbon Tail
+    ctx.beginPath();
+    ctx.moveTo(cx - radius * 0.35, cy + radius * 0.4);
+    ctx.lineTo(cx - ribbonSpread, cy + ribbonLen);
+    ctx.lineTo(cx - radius * 0.35, cy + ribbonLen - radius * 0.22);
+    ctx.lineTo(cx - radius * 0.1, cy + radius * 0.5);
+    ctx.closePath();
+
+    const leftRibbonGrad = ctx.createLinearGradient(cx - ribbonSpread, cy, cx, cy + ribbonLen);
+    if (isUnlocked) {
+      leftRibbonGrad.addColorStop(0, '#78350F');
+      leftRibbonGrad.addColorStop(0.4, '#B45309');
+      leftRibbonGrad.addColorStop(0.75, '#D97706');
+      leftRibbonGrad.addColorStop(1, '#451A03');
+    } else {
+      leftRibbonGrad.addColorStop(0, '#475569');
+      leftRibbonGrad.addColorStop(0.5, '#334155');
+      leftRibbonGrad.addColorStop(1, '#1E293B');
+    }
+    ctx.fillStyle = leftRibbonGrad;
+    ctx.fill();
+    ctx.strokeStyle = isUnlocked ? '#FEF3C7' : '#94A3B8';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Right Ribbon Tail
+    ctx.beginPath();
+    ctx.moveTo(cx + radius * 0.35, cy + radius * 0.4);
+    ctx.lineTo(cx + ribbonSpread, cy + ribbonLen);
+    ctx.lineTo(cx + radius * 0.35, cy + ribbonLen - radius * 0.22);
+    ctx.lineTo(cx + radius * 0.1, cy + radius * 0.5);
+    ctx.closePath();
+
+    const rightRibbonGrad = ctx.createLinearGradient(cx + ribbonSpread, cy, cx, cy + ribbonLen);
+    if (isUnlocked) {
+      rightRibbonGrad.addColorStop(0, '#78350F');
+      rightRibbonGrad.addColorStop(0.4, '#B45309');
+      rightRibbonGrad.addColorStop(0.75, '#D97706');
+      rightRibbonGrad.addColorStop(1, '#451A03');
+    } else {
+      rightRibbonGrad.addColorStop(0, '#475569');
+      rightRibbonGrad.addColorStop(0.5, '#334155');
+      rightRibbonGrad.addColorStop(1, '#1E293B');
+    }
+    ctx.fillStyle = rightRibbonGrad;
+    ctx.fill();
+    ctx.strokeStyle = isUnlocked ? '#FEF3C7' : '#94A3B8';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Center Ribbon Fold Shadow
+    ctx.beginPath();
+    ctx.moveTo(cx - radius * 0.25, cy + radius * 0.45);
+    ctx.lineTo(cx, cy + radius * 0.65);
+    ctx.lineTo(cx + radius * 0.25, cy + radius * 0.45);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+    ctx.fill();
+
+    // 2. 16-Point Scalloped Luxury Rosette Bezel
+    const numPoints = 16;
+    const rOuter = radius;
+    const rInner = radius * 0.88;
+
+    ctx.beginPath();
+    for (let i = 0; i < numPoints * 2; i++) {
+      const angle = (i * Math.PI) / numPoints;
+      const r = (i % 2 === 0) ? rOuter : rInner;
+      const px = cx + Math.cos(angle) * r;
+      const py = cy + Math.sin(angle) * r;
+      if (i === 0) {
+        ctx.moveTo(px, py);
+      } else {
+        ctx.lineTo(px, py);
+      }
+    }
+    ctx.closePath();
+
+    const goldRimGrad = ctx.createLinearGradient(cx - radius, cy - radius, cx + radius, cy + radius);
+    if (isUnlocked) {
+      goldRimGrad.addColorStop(0, '#FFF8D6');
+      goldRimGrad.addColorStop(0.18, '#FCD34D');
+      goldRimGrad.addColorStop(0.38, '#F59E0B');
+      goldRimGrad.addColorStop(0.55, '#FEF3C7');
+      goldRimGrad.addColorStop(0.72, '#D97706');
+      goldRimGrad.addColorStop(0.88, '#B45309');
+      goldRimGrad.addColorStop(1, '#78350F');
+    } else {
+      goldRimGrad.addColorStop(0, '#F1F5F9');
+      goldRimGrad.addColorStop(0.25, '#CBD5E1');
+      goldRimGrad.addColorStop(0.50, '#94A3B8');
+      goldRimGrad.addColorStop(0.75, '#64748B');
+      goldRimGrad.addColorStop(1, '#334155');
+    }
+    ctx.fillStyle = goldRimGrad;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.45)';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    // 3. Outer Polished Bevel Ring
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius * 0.82, 0, Math.PI * 2);
+    ctx.strokeStyle = isUnlocked ? '#FFFBEB' : '#E2E8F0';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // 4. Inner Beaded Gold Coin Ring
+    const numBeads = 18;
+    const beadRadius = radius * 0.74;
+    for (let b = 0; b < numBeads; b++) {
+      const bAngle = (b * Math.PI * 2) / numBeads;
+      const bx = cx + Math.cos(bAngle) * beadRadius;
+      const by = cy + Math.sin(bAngle) * beadRadius;
+      ctx.beginPath();
+      ctx.arc(bx, by, Math.max(1.2, radius * 0.035), 0, Math.PI * 2);
+      ctx.fillStyle = isUnlocked ? '#FDE68A' : '#94A3B8';
+      ctx.fill();
+    }
+
+    // 5. Deep Obsidian / Onyx Center Enamel Disc
+    const coreRadius = radius * 0.66;
+    ctx.beginPath();
+    ctx.arc(cx, cy, coreRadius, 0, Math.PI * 2);
+    const coreGrad = ctx.createRadialGradient(cx, cy - coreRadius * 0.25, coreRadius * 0.1, cx, cy, coreRadius);
+    if (isUnlocked) {
+      coreGrad.addColorStop(0, '#2D2419');
+      coreGrad.addColorStop(0.55, '#16130E');
+      coreGrad.addColorStop(1, '#070604');
+    } else {
+      coreGrad.addColorStop(0, '#334155');
+      coreGrad.addColorStop(0.65, '#1E293B');
+      coreGrad.addColorStop(1, '#0F172A');
+    }
+    ctx.fillStyle = coreGrad;
+    ctx.fill();
+    ctx.strokeStyle = isUnlocked ? '#B45309' : '#475569';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // 6. Draw Emblem Vector Glyph
+    this.drawEmblemGlyph(ctx, cx, cy, coreRadius * 1.5, badge.key, isUnlocked);
+
+    ctx.restore();
+  }
+
+  /**
+   * Draws handcrafted vector glyphs for each badge achievement tier
+   */
+  static drawEmblemGlyph(ctx, cx, cy, size, badgeKey, isUnlocked) {
+    const primaryColor = isUnlocked ? '#FEF08A' : '#CBD5E1';
+    const accentColor = isUnlocked ? '#F59E0B' : '#94A3B8';
+
+    ctx.save();
+
+    switch (badgeKey) {
+      case 'FIRST_STEP': {
+        // Golden Sprout of Genesis + Soil Mound
+        ctx.fillStyle = accentColor;
+        ctx.beginPath();
+        ctx.arc(cx, cy + size * 0.26, size * 0.18, Math.PI, 0);
+        ctx.fill();
+
+        // Stem
+        ctx.strokeStyle = primaryColor;
+        ctx.lineWidth = Math.max(2, size * 0.08);
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(cx, cy + size * 0.24);
+        ctx.quadraticCurveTo(cx - size * 0.05, cy, cx, cy - size * 0.18);
+        ctx.stroke();
+
+        // Left Leaf
+        ctx.fillStyle = primaryColor;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - size * 0.02);
+        ctx.quadraticCurveTo(cx - size * 0.32, cy - size * 0.05, cx - size * 0.28, cy - size * 0.24);
+        ctx.quadraticCurveTo(cx - size * 0.08, cy - size * 0.24, cx, cy - size * 0.02);
+        ctx.fill();
+
+        // Right Leaf
+        ctx.fillStyle = accentColor;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - size * 0.08);
+        ctx.quadraticCurveTo(cx + size * 0.32, cy - size * 0.12, cx + size * 0.26, cy - size * 0.28);
+        ctx.quadraticCurveTo(cx + size * 0.06, cy - size * 0.26, cx, cy - size * 0.08);
+        ctx.fill();
+        break;
+      }
+
+      case 'QUARTER_WAY': {
+        // Golden Navigator's Compass Rose (8-point Nautical Star)
+        const radOut = size * 0.34;
+        const radIn = size * 0.12;
+
+        for (let i = 0; i < 4; i++) {
+          const angle = (i * Math.PI) / 2;
+          const nextAngle = angle + Math.PI / 4;
+          const prevAngle = angle - Math.PI / 4;
+
+          // Light facet
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(cx + Math.cos(angle) * radOut, cy + Math.sin(angle) * radOut);
+          ctx.lineTo(cx + Math.cos(nextAngle) * radIn, cy + Math.sin(nextAngle) * radIn);
+          ctx.closePath();
+          ctx.fillStyle = primaryColor;
+          ctx.fill();
+
+          // Dark facet
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(cx + Math.cos(angle) * radOut, cy + Math.sin(angle) * radOut);
+          ctx.lineTo(cx + Math.cos(prevAngle) * radIn, cy + Math.sin(prevAngle) * radIn);
+          ctx.closePath();
+          ctx.fillStyle = accentColor;
+          ctx.fill();
+        }
+
+        // Center Gold Hub
+        ctx.beginPath();
+        ctx.arc(cx, cy, size * 0.08, 0, Math.PI * 2);
+        ctx.fillStyle = isUnlocked ? '#FFFBEB' : '#E2E8F0';
+        ctx.fill();
+        break;
+      }
+
+      case 'HALFWAY_HERO': {
+        // Golden Twin Mountain Peaks with Summit Flag
+        // Back Left Peak
+        ctx.beginPath();
+        ctx.moveTo(cx - size * 0.32, cy + size * 0.22);
+        ctx.lineTo(cx - size * 0.14, cy - size * 0.14);
+        ctx.lineTo(cx + size * 0.04, cy + size * 0.22);
+        ctx.closePath();
+        ctx.fillStyle = accentColor;
+        ctx.fill();
+
+        // Front Main Peak (Right)
+        ctx.beginPath();
+        ctx.moveTo(cx - size * 0.1, cy + size * 0.22);
+        ctx.lineTo(cx + size * 0.12, cy - size * 0.26);
+        ctx.lineTo(cx + size * 0.34, cy + size * 0.22);
+        ctx.closePath();
+        ctx.fillStyle = primaryColor;
+        ctx.fill();
+
+        // Shading on Main Peak Left Flank
+        ctx.beginPath();
+        ctx.moveTo(cx - size * 0.1, cy + size * 0.22);
+        ctx.lineTo(cx + size * 0.12, cy - size * 0.26);
+        ctx.lineTo(cx + size * 0.12, cy + size * 0.22);
+        ctx.closePath();
+        ctx.fillStyle = accentColor;
+        ctx.fill();
+
+        // Summit Flagpole & Pennant
+        ctx.strokeStyle = primaryColor;
+        ctx.lineWidth = Math.max(1.5, size * 0.05);
+        ctx.beginPath();
+        ctx.moveTo(cx + size * 0.12, cy - size * 0.26);
+        ctx.lineTo(cx + size * 0.12, cy - size * 0.38);
+        ctx.stroke();
+
+        ctx.fillStyle = isUnlocked ? '#EF4444' : '#64748B';
+        ctx.beginPath();
+        ctx.moveTo(cx + size * 0.12, cy - size * 0.38);
+        ctx.lineTo(cx + size * 0.28, cy - size * 0.32);
+        ctx.lineTo(cx + size * 0.12, cy - size * 0.27);
+        ctx.closePath();
+        ctx.fill();
+        break;
+      }
+
+      case 'ALMOST_THERE': {
+        // Blazing Beacon / Torch of Triumph
+        // Torch Handle / Cup
+        ctx.fillStyle = accentColor;
+        ctx.beginPath();
+        ctx.moveTo(cx - size * 0.14, cy + size * 0.06);
+        ctx.lineTo(cx + size * 0.14, cy + size * 0.06);
+        ctx.lineTo(cx + size * 0.06, cy + size * 0.30);
+        ctx.lineTo(cx - size * 0.06, cy + size * 0.30);
+        ctx.closePath();
+        ctx.fill();
+
+        // Outer Flame (Amber)
+        ctx.fillStyle = accentColor;
+        ctx.beginPath();
+        ctx.moveTo(cx - size * 0.18, cy + size * 0.04);
+        ctx.quadraticCurveTo(cx - size * 0.30, cy - size * 0.12, cx - size * 0.06, cy - size * 0.34);
+        ctx.quadraticCurveTo(cx, cy - size * 0.18, cx + size * 0.08, cy - size * 0.36);
+        ctx.quadraticCurveTo(cx + size * 0.28, cy - size * 0.14, cx + size * 0.18, cy + size * 0.04);
+        ctx.closePath();
+        ctx.fill();
+
+        // Inner Core Flame (Radiant Gold)
+        ctx.fillStyle = primaryColor;
+        ctx.beginPath();
+        ctx.moveTo(cx - size * 0.10, cy + size * 0.04);
+        ctx.quadraticCurveTo(cx - size * 0.16, cy - size * 0.08, cx - size * 0.02, cy - size * 0.22);
+        ctx.quadraticCurveTo(cx + size * 0.02, cy - size * 0.10, cx + size * 0.08, cy - size * 0.24);
+        ctx.quadraticCurveTo(cx + size * 0.16, cy - size * 0.08, cx + size * 0.10, cy + size * 0.04);
+        ctx.closePath();
+        ctx.fill();
+        break;
+      }
+
+      case 'ACHIEVER':
+      default: {
+        // Imperial Laureled Sovereign Crown
+        // 5-Point Regal Crown
+        ctx.fillStyle = primaryColor;
+        ctx.beginPath();
+        ctx.moveTo(cx - size * 0.28, cy + size * 0.12);
+        ctx.lineTo(cx - size * 0.30, cy - size * 0.12);
+        ctx.lineTo(cx - size * 0.15, cy + size * 0.02);
+        ctx.lineTo(cx - size * 0.08, cy - size * 0.22);
+        ctx.lineTo(cx, cy - size * 0.02);
+        ctx.lineTo(cx, cy - size * 0.32);
+        ctx.lineTo(cx, cy - size * 0.02);
+        ctx.lineTo(cx + size * 0.08, cy - size * 0.22);
+        ctx.lineTo(cx + size * 0.15, cy + size * 0.02);
+        ctx.lineTo(cx + size * 0.30, cy - size * 0.12);
+        ctx.lineTo(cx + size * 0.28, cy + size * 0.12);
+        ctx.closePath();
+        ctx.fill();
+
+        // Crown Base Band
+        ctx.fillStyle = accentColor;
+        ctx.fillRect(cx - size * 0.28, cy + size * 0.12, size * 0.56, size * 0.08);
+
+        // Center Finial Star on Highest Pinnacle
+        ctx.fillStyle = isUnlocked ? '#FFFBEB' : '#FFFFFF';
+        ctx.beginPath();
+        ctx.arc(cx, cy - size * 0.34, Math.max(1.5, size * 0.05), 0, Math.PI * 2);
+        ctx.fill();
+
+        // Laurel Wreath Leaves flanking the Crown
+        ctx.strokeStyle = primaryColor;
+        ctx.lineWidth = Math.max(1.5, size * 0.04);
+        ctx.beginPath();
+        ctx.arc(cx, cy + size * 0.10, size * 0.32, Math.PI * 0.65, Math.PI * 1.05);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(cx, cy + size * 0.10, size * 0.32, Math.PI * -0.05, Math.PI * 0.35);
+        ctx.stroke();
+        break;
+      }
+    }
+
+    ctx.restore();
+  }
+
+  /**
    * Layout Renderer: Mobile Lock-Screen (1080x1920)
    * 
-   * Strict adherence to Mobile Lock-Screen Safe Zones:
-   * - Top 0–28% (0 - 538px): Kept empty for OS Clock, Dynamic Island, and Notifications
-   * - Main content 29–84% (557 - 1613px): Goal header, progress card, milestone list, and badges
-   * - Footer 85–97% (1632 - 1862px): Motivational tagline and branding
-   * - Horizontal margins: approximately 8% of width (86px padding)
+   * Strict adherence to Mobile Lock-Screen Safe Zones with Rich Analytics HUD Scaling:
+   * - Top 0–23% (0 - 440px): Kept empty for OS Clock, Dynamic Island, and Notifications
+   * - Main content 23–85% (440 - 1630px): Scaled Goal header, Progress & Analytics Cockpit,
+   *   Milestone Roadmap with Current Focus card, and 5 Luxury Gold Achievement Medallions
+   * - Footer 85–96% (1640 - 1840px): Inspiring motivational quote and Horizon Branding
+   * - Horizontal margins: 60px (960px content width) for optimal phone display readability
    */
   static renderMobileLayout(ctx, width, height, safeZone, data) {
     const { goal, palette, daysRemaining, progressPct, activeMilestone, upcomingMilestone, badges, motivation } = data;
     const fontPrimary = "'Roboto', -apple-system, BlinkMacSystemFont, system-ui, sans-serif";
 
-    // Horizontal padding: approximately 8% of width
-    const paddingX = Math.round(width * 0.08); // 86px for 1080w
-    const contentLeft = paddingX;
-    const contentWidth = width - (paddingX * 2); // 908px
+    // Horizontal padding: 60px padding for wide 960px reading area on 1080w
+    const contentLeft = 60;
+    const contentWidth = width - (contentLeft * 2); // 960px
 
-    // Safe zone boundary Y coordinates
-    const mainTop = Math.round(height * (safeZone.mainStartPct || 0.29)); // 557px
-    let cursorY = mainTop;
+    // Content starts at 440px to safely clear the OS clock while eliminating the bottom void!
+    let cursorY = Math.round(height * 0.23); // ~442px
 
-    // --- Block 1: Goal Header (Category Pill, Title with Auto-Fit, Status) ---
+    // --- Block 1: Goal Header (Category Pill, Title with Auto-Fit, Duration) ---
     const category = (goal?.category || (goal?.sourceType ? `${goal.sourceType} Course` : 'Learning')).toUpperCase();
-    ctx.font = `700 20px ${fontPrimary}`;
+    ctx.font = `700 18px ${fontPrimary}`;
     const catMetrics = ctx.measureText(category);
     const pillW = catMetrics.width + 32;
-    const pillH = 34;
+    const pillH = 38;
 
-    ctx.fillStyle = palette.cardBackground || 'rgba(15, 23, 42, 0.70)';
-    this.drawRoundedRect(ctx, contentLeft, cursorY, pillW, pillH, 17);
+    ctx.fillStyle = palette.cardBackground || 'rgba(15, 23, 42, 0.78)';
+    this.drawRoundedRect(ctx, contentLeft, cursorY, pillW, pillH, 19);
     ctx.fill();
     ctx.strokeStyle = palette.accentColor || '#F59E0B';
     ctx.lineWidth = 1.5;
@@ -577,65 +964,70 @@ export class CanvasWallpaperEngine {
 
     cursorY += pillH + 18;
 
-    // Goal Title with automatic font fitting and line wrapping (Max 2 lines)
+    // Goal Title with auto-fit, wrapping (Max 2 lines), and shadow for contrast
+    ctx.save();
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
+    ctx.shadowBlur = 10;
+    ctx.shadowOffsetY = 3;
     ctx.fillStyle = palette.primaryText;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     const goalTitle = goal?.title || 'Achievement Countdown Goal';
-    cursorY = this.fitAndWrapText(ctx, goalTitle, contentLeft, cursorY, contentWidth, 42, 30, fontPrimary, 2, '800');
+    cursorY = this.fitAndWrapText(ctx, goalTitle, contentLeft, cursorY, contentWidth, 50, 36, fontPrimary, 2, '800');
+    ctx.restore();
 
-    cursorY += 16;
+    cursorY += 20;
 
-    // --- Block 2: Progress & Analytics Hero Card (Circular Progress + Countdown + Real Analytics) ---
-    const heroCardH = 220;
-    ctx.fillStyle = palette.cardBackground || 'rgba(15, 23, 42, 0.70)';
-    this.drawRoundedRect(ctx, contentLeft, cursorY, contentWidth, heroCardH, 22);
+    // --- Block 2: Progress & Analytics Hero Card (Cockpit HUD) ---
+    const heroCardH = 290;
+    ctx.fillStyle = palette.cardBackground || 'rgba(15, 23, 42, 0.78)';
+    this.drawRoundedRect(ctx, contentLeft, cursorY, contentWidth, heroCardH, 24);
     ctx.fill();
-    ctx.strokeStyle = palette.cardBorder || 'rgba(255, 255, 255, 0.15)';
+    ctx.strokeStyle = palette.cardBorder || 'rgba(255, 255, 255, 0.16)';
     ctx.lineWidth = 1.5;
     ctx.stroke();
 
     // Circular Progress Arc (Left Column in Hero Card)
-    const ringRadius = 70;
-    const ringCx = contentLeft + 105;
+    const ringRadius = 88;
+    const ringCx = contentLeft + 125;
     const ringCy = cursorY + (heroCardH / 2);
 
-    this.drawProgressRing(ctx, ringCx, ringCy, ringRadius, 14, progressPct, palette.progressFill, palette.progressTrack);
+    this.drawProgressRing(ctx, ringCx, ringCy, ringRadius, 16, progressPct, palette.progressFill, palette.progressTrack);
 
     // Center Percentage inside Progress Ring
-    ctx.font = `800 36px ${fontPrimary}`;
+    ctx.font = `800 46px ${fontPrimary}`;
     ctx.fillStyle = palette.primaryText;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(`${progressPct}%`, ringCx, ringCy - 6);
+    ctx.fillText(`${progressPct}%`, ringCx, ringCy - 8);
 
-    ctx.font = `700 13px ${fontPrimary}`;
+    ctx.font = `800 14px ${fontPrimary}`;
     ctx.fillStyle = palette.secondaryText;
     const statusLabel = progressPct >= 100 ? 'COMPLETED' : (progressPct > 0 ? 'IN PROGRESS' : 'NOT STARTED');
-    ctx.fillText(statusLabel, ringCx, ringCy + 22);
+    ctx.fillText(statusLabel, ringCx, ringCy + 28);
 
     // Countdown & Goal Analytics (Right Column in Hero Card)
-    const countLeft = ringCx + ringRadius + 35;
-    const countTop = cursorY + 30;
+    const countLeft = ringCx + ringRadius + 40;
+    const countTop = cursorY + 32;
 
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.font = `800 58px ${fontPrimary}`;
+    ctx.font = `800 74px ${fontPrimary}`;
     ctx.fillStyle = palette.primaryText;
     ctx.fillText(String(daysRemaining), countLeft, countTop);
 
     ctx.font = `800 18px ${fontPrimary}`;
     ctx.fillStyle = palette.accentColor;
-    ctx.fillText('DAYS REMAINING', countLeft, countTop + 64);
+    ctx.fillText('DAYS REMAINING', countLeft, countTop + 76);
 
-    ctx.font = `500 16px ${fontPrimary}`;
+    ctx.font = `500 17px ${fontPrimary}`;
     ctx.fillStyle = palette.secondaryText;
     const targetLabel = goal?.targetDate
       ? new Date(goal.targetDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
       : `Target: ${daysRemaining} days`;
-    ctx.fillText(`Deadline: ${targetLabel}`, countLeft, countTop + 92);
+    ctx.fillText(`Deadline: ${targetLabel}`, countLeft, countTop + 106);
 
-    // Real Analytics Chips (rendered only if actually present in data model — never fabricated!)
+    // Real Analytics Chips
     const analyticsItems = [];
     if (goal?.streakDays && goal.streakDays > 0) {
       analyticsItems.push(`🔥 ${goal.streakDays}d Streak`);
@@ -643,115 +1035,132 @@ export class CanvasWallpaperEngine {
     const milestones = goal?.milestones || [];
     const completedCount = milestones.filter(m => m.status === 'completed' || m.completed === true).length;
     if (milestones.length > 0) {
-      analyticsItems.push(`✓ ${completedCount}/${milestones.length} Done`);
+      analyticsItems.push(`✓ ${completedCount}/${milestones.length} Done (${progressPct}%)`);
     }
     if (goal?.courseMetadata?.durationHours) {
       analyticsItems.push(`⏱️ ${goal.courseMetadata.durationHours}h`);
     }
 
     if (analyticsItems.length > 0) {
-      ctx.font = `600 14px ${fontPrimary}`;
+      ctx.font = `700 15px ${fontPrimary}`;
       ctx.fillStyle = palette.accentColor;
-      ctx.fillText(analyticsItems.join('  •  '), countLeft, countTop + 124);
+      ctx.fillText(analyticsItems.join('   •   '), countLeft, countTop + 144);
     }
 
-    cursorY += heroCardH + 20;
+    cursorY += heroCardH + 24;
 
-    // --- Block 3: Completed Milestones & Current Focus Card ---
+    // --- Block 3: Milestone Roadmap & Current Focus Card ---
     const sortedMilestones = [...milestones].sort((a, b) => (a.order || 0) - (b.order || 0));
     const completedList = sortedMilestones.filter(m => m.status === 'completed' || m.completed === true);
     const pendingList = sortedMilestones.filter(m => m.status !== 'completed' && !m.completed);
 
-    const milestoneCardH = 260;
-    ctx.fillStyle = palette.cardBackground || 'rgba(15, 23, 42, 0.70)';
-    this.drawRoundedRect(ctx, contentLeft, cursorY, contentWidth, milestoneCardH, 20);
+    const milestoneCardH = 340;
+    ctx.fillStyle = palette.cardBackground || 'rgba(15, 23, 42, 0.78)';
+    this.drawRoundedRect(ctx, contentLeft, cursorY, contentWidth, milestoneCardH, 22);
     ctx.fill();
-    ctx.strokeStyle = palette.cardBorder || 'rgba(255, 255, 255, 0.15)';
+    ctx.strokeStyle = palette.cardBorder || 'rgba(255, 255, 255, 0.16)';
     ctx.lineWidth = 1.5;
     ctx.stroke();
 
     // Card Header Row
-    ctx.font = `700 15px ${fontPrimary}`;
+    ctx.font = `700 16px ${fontPrimary}`;
     ctx.fillStyle = palette.accentColor;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.fillText('MILESTONE TRACKER', contentLeft + 22, cursorY + 18);
+    ctx.fillText('MILESTONE TRACKER & CURRENT FOCUS', contentLeft + 24, cursorY + 20);
 
     ctx.textAlign = 'right';
     ctx.fillStyle = palette.secondaryText;
-    ctx.font = `600 15px ${fontPrimary}`;
-    ctx.fillText(`${completedList.length} of ${milestones.length} Completed`, contentLeft + contentWidth - 22, cursorY + 18);
+    ctx.font = `600 16px ${fontPrimary}`;
+    ctx.fillText(`${completedList.length} of ${milestones.length} Completed`, contentLeft + contentWidth - 24, cursorY + 20);
 
-    let mItemY = cursorY + 48;
-    const maxMilestonesToShow = 4;
-    let itemsRendered = 0;
+    let mItemY = cursorY + 54;
 
-    // 1. Show recently completed milestones (up to maxMilestonesToShow - 1 if pending exists)
-    const completedToShow = completedList.slice(-3);
-    for (const m of completedToShow) {
-      if (itemsRendered >= maxMilestonesToShow) break;
+    // Sub-card for Active Focus Milestone
+    if (activeMilestone) {
+      const focusCardH = 136;
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+      this.drawRoundedRect(ctx, contentLeft + 20, mItemY, contentWidth - 40, focusCardH, 14);
+      ctx.fill();
+      ctx.strokeStyle = palette.accentColor || '#F59E0B';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
       ctx.textAlign = 'left';
-      ctx.font = `700 16px ${fontPrimary}`;
-      ctx.fillStyle = '#10B981'; // Green checkmark
-      ctx.fillText('✓', contentLeft + 22, mItemY);
+      ctx.font = `700 14px ${fontPrimary}`;
+      ctx.fillStyle = palette.accentColor;
+      ctx.fillText(`🎯 CURRENT FOCUS • MILESTONE #${activeMilestone.order}`, contentLeft + 36, mItemY + 16);
+
+      ctx.fillStyle = palette.primaryText;
+      let focusTitleY = mItemY + 42;
+      focusTitleY = this.fitAndWrapText(ctx, activeMilestone.title, contentLeft + 36, focusTitleY, contentWidth - 72, 24, 18, fontPrimary, 2, '700');
+
+      ctx.font = `500 14px ${fontPrimary}`;
+      ctx.fillStyle = palette.secondaryText;
+      const targetStr = activeMilestone.targetDay ? `Day ${activeMilestone.targetDay}` : '';
+      const dueStr = activeMilestone.dueDate ? `Target: ${new Date(activeMilestone.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}` : '';
+      const milestoneMeta = [targetStr, dueStr].filter(Boolean).join(' • ');
+      if (milestoneMeta) {
+        ctx.fillText(milestoneMeta, contentLeft + 36, mItemY + focusCardH - 22);
+      }
+
+      mItemY += focusCardH + 18;
+    }
+
+    // Upcoming Milestone Row (if any)
+    if (upcomingMilestone) {
+      ctx.textAlign = 'left';
+      ctx.font = `700 15px ${fontPrimary}`;
+      ctx.fillStyle = palette.secondaryText;
+      ctx.fillText('UPCOMING', contentLeft + 24, mItemY);
+
+      ctx.font = `600 17px ${fontPrimary}`;
+      ctx.fillStyle = palette.primaryText;
+      let upTitle = `#${upcomingMilestone.order} ${upcomingMilestone.title}`;
+      while (ctx.measureText(upTitle).width > contentWidth - 140 && upTitle.length > 10) {
+        upTitle = upTitle.slice(0, -1).trim();
+      }
+      if (upTitle.length < `#${upcomingMilestone.order} ${upcomingMilestone.title}`.length) upTitle += '...';
+      ctx.fillText(upTitle, contentLeft + 120, mItemY);
+      mItemY += 32;
+    }
+
+    // Completed milestones summary / overflow
+    if (completedList.length > 0) {
+      const recentCompleted = completedList[completedList.length - 1];
+      ctx.textAlign = 'left';
+      ctx.font = `700 15px ${fontPrimary}`;
+      ctx.fillStyle = '#10B981';
+      ctx.fillText('✓', contentLeft + 24, mItemY);
 
       ctx.font = `500 16px ${fontPrimary}`;
-      ctx.fillStyle = palette.primaryText;
-      let mTitle = `#${m.order} ${m.title}`;
-      while (ctx.measureText(mTitle).width > contentWidth - 80 && mTitle.length > 10) {
-        mTitle = mTitle.slice(0, -1).trim();
+      ctx.fillStyle = palette.secondaryText;
+      let compTitle = `Completed: #${recentCompleted.order} ${recentCompleted.title}`;
+      while (ctx.measureText(compTitle).width > contentWidth - 70 && compTitle.length > 10) {
+        compTitle = compTitle.slice(0, -1).trim();
       }
-      if (mTitle.length < `#${m.order} ${m.title}`.length) mTitle += '...';
-      ctx.fillText(mTitle, contentLeft + 44, mItemY);
-      mItemY += 32;
-      itemsRendered++;
-    }
-
-    // Overflow indicator if completed milestones exceed display limit
-    if (completedList.length > completedToShow.length) {
-      ctx.font = `italic 600 13px ${fontPrimary}`;
-      ctx.fillStyle = palette.accentColor;
-      ctx.fillText(`+${completedList.length - completedToShow.length} more completed milestones`, contentLeft + 44, mItemY);
+      if (compTitle.length < `Completed: #${recentCompleted.order} ${recentCompleted.title}`.length) compTitle += '...';
+      ctx.fillText(compTitle, contentLeft + 48, mItemY);
       mItemY += 26;
-    }
 
-    // 2. Show Active Focus / Next Milestone
-    if (activeMilestone && itemsRendered < maxMilestonesToShow) {
-      ctx.textAlign = 'left';
-      ctx.font = `700 16px ${fontPrimary}`;
-      ctx.fillStyle = palette.accentColor;
-      ctx.fillText('🎯', contentLeft + 22, mItemY);
-
-      ctx.font = `700 16px ${fontPrimary}`;
-      ctx.fillStyle = palette.accentColor;
-      let activeTitle = `Next: #${activeMilestone.order} ${activeMilestone.title}`;
-      while (ctx.measureText(activeTitle).width > contentWidth - 80 && activeTitle.length > 10) {
-        activeTitle = activeTitle.slice(0, -1).trim();
+      if (completedList.length > 1) {
+        ctx.font = `italic 600 14px ${fontPrimary}`;
+        ctx.fillStyle = palette.accentColor;
+        ctx.fillText(`+${completedList.length - 1} more completed milestones`, contentLeft + 48, mItemY);
       }
-      if (activeTitle.length < `Next: #${activeMilestone.order} ${activeMilestone.title}`.length) activeTitle += '...';
-      ctx.fillText(activeTitle, contentLeft + 44, mItemY);
-      mItemY += 32;
-      itemsRendered++;
-    }
-
-    // 3. Fallback when 0 milestones completed
-    if (completedList.length === 0 && pendingList.length > 0 && itemsRendered < 2) {
+    } else if (!upcomingMilestone && pendingList.length > 1) {
       const nextPending = pendingList[1];
-      if (nextPending) {
-        ctx.textAlign = 'left';
-        ctx.font = `500 15px ${fontPrimary}`;
-        ctx.fillStyle = palette.secondaryText;
-        ctx.fillText(`○ Day ${nextPending.targetDay}: ${nextPending.title.slice(0, 40)}`, contentLeft + 44, mItemY);
-        mItemY += 30;
-      }
+      ctx.font = `500 15px ${fontPrimary}`;
+      ctx.fillStyle = palette.secondaryText;
+      ctx.fillText(`○ Day ${nextPending.targetDay}: ${nextPending.title.slice(0, 50)}`, contentLeft + 24, mItemY);
     }
 
-    cursorY += milestoneCardH + 20;
+    cursorY += milestoneCardH + 24;
 
     // --- Block 4: Achievement Badges Strip & Highest Unlocked Tier ---
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.font = `700 16px ${fontPrimary}`;
+    ctx.font = `700 18px ${fontPrimary}`;
     ctx.fillStyle = palette.secondaryText;
     ctx.fillText('ACHIEVEMENT BADGES', contentLeft, cursorY);
 
@@ -760,61 +1169,57 @@ export class CanvasWallpaperEngine {
     const highestBadge = unlockedBadges[unlockedBadges.length - 1];
     if (highestBadge) {
       ctx.textAlign = 'right';
-      ctx.font = `700 14px ${fontPrimary}`;
+      ctx.font = `700 16px ${fontPrimary}`;
       ctx.fillStyle = highestBadge.color || '#F59E0B';
       ctx.fillText(`★ Highest: ${highestBadge.name}`, contentLeft + contentWidth, cursorY);
     } else {
       ctx.textAlign = 'right';
-      ctx.font = `500 14px ${fontPrimary}`;
+      ctx.font = `500 15px ${fontPrimary}`;
       ctx.fillStyle = palette.secondaryText;
       ctx.fillText('Milestone 1 unlocks First Step', contentLeft + contentWidth, cursorY);
     }
 
-    cursorY += 28;
+    cursorY += 34;
 
-    const badgeSize = 64;
-    const badgeGap = (contentWidth - (badgeSize * 5)) / 4;
+    const badgeRadius = 46; // Diameter 92px
+    const colWidth = contentWidth / 5; // 192px per badge column
 
     badges.forEach((b, idx) => {
-      const bx = contentLeft + (idx * (badgeSize + badgeGap));
-      const by = cursorY;
+      const cx = contentLeft + (idx * colWidth) + (colWidth / 2);
+      const cy = cursorY + badgeRadius + 4;
 
-      // Circle Base
-      ctx.beginPath();
-      ctx.arc(bx + (badgeSize / 2), by + (badgeSize / 2), badgeSize / 2, 0, Math.PI * 2);
-      ctx.fillStyle = b.unlocked ? (b.color || '#F59E0B') : 'rgba(255, 255, 255, 0.08)';
-      ctx.fill();
-      ctx.strokeStyle = b.unlocked ? '#FFFFFF' : 'rgba(255, 255, 255, 0.2)';
-      ctx.lineWidth = b.unlocked ? 2.5 : 1;
-      ctx.stroke();
+      // Draw Luxury Medallion
+      this.drawLuxuryBadge(ctx, cx, cy, badgeRadius, b, palette);
 
-      // Inner Symbol / Number
-      ctx.font = `800 20px ${fontPrimary}`;
-      ctx.fillStyle = b.unlocked ? '#FFFFFF' : 'rgba(255, 255, 255, 0.4)';
+      // Badge Name Label
+      ctx.font = `700 15px ${fontPrimary}`;
+      ctx.fillStyle = b.unlocked ? palette.primaryText : 'rgba(255, 255, 255, 0.45)';
       ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      const label = b.key === 'FIRST_STEP' ? '1' : (b.key === 'ACHIEVER' ? '★' : `${b.thresholdPct}%`);
-      ctx.fillText(label, bx + (badgeSize / 2), by + (badgeSize / 2));
+      ctx.textBaseline = 'top';
+      ctx.fillText(b.name, cx, cy + badgeRadius + 24);
 
-      // Small Badge Name Label below
-      ctx.font = `600 12px ${fontPrimary}`;
-      ctx.fillStyle = b.unlocked ? palette.primaryText : 'rgba(255, 255, 255, 0.4)';
-      ctx.fillText(b.name, bx + (badgeSize / 2), by + badgeSize + 14);
+      // Sub-label (threshold / order)
+      ctx.font = `600 13px ${fontPrimary}`;
+      ctx.fillStyle = b.unlocked ? (palette.accentColor || '#F59E0B') : 'rgba(255, 255, 255, 0.3)';
+      const subLabel = b.key === 'FIRST_STEP' ? '1st Step' : (b.key === 'ACHIEVER' ? '100% Goal' : `${b.thresholdPct}% Mark`);
+      ctx.fillText(subLabel, cx, cy + badgeRadius + 44);
     });
 
+    cursorY += (badgeRadius * 2) + 80;
+
     // --- Block 5: Footer Zone (85–97% / 1632 - 1862px): Tagline & Branding ---
-    const footerTop = Math.round(height * (safeZone.footerStartPct || 0.85)); // 1632px
+    const footerTop = Math.max(cursorY, Math.round(height * 0.86)); // ~1650px
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
-    ctx.font = `italic 500 20px ${fontPrimary}`;
+    ctx.font = `italic 500 24px ${fontPrimary}`;
     ctx.fillStyle = palette.secondaryText;
     const quoteStr = `"${motivation.quote}"`;
-    this.wrapText(ctx, quoteStr, width / 2, footerTop, contentWidth, 28, 2);
+    this.wrapText(ctx, quoteStr, width / 2, footerTop, contentWidth, 34, 2);
 
     // Clean Horizon Branding above bottom gesture bar
-    ctx.font = `700 13px ${fontPrimary}`;
+    ctx.font = `700 14px ${fontPrimary}`;
     ctx.fillStyle = palette.accentColor || '#F59E0B';
-    ctx.fillText('HORIZON LEARNING PLANNER', width / 2, Math.round(height * 0.95));
+    ctx.fillText('HORIZON ACHIEVEMENT HUD • FULL-RESOLUTION 1080×1920', width / 2, Math.round(height * 0.95));
   }
 
   /**
@@ -869,6 +1274,7 @@ export class CanvasWallpaperEngine {
       analyticsPills.push(`🔥 ${goal.streakDays}-Day Streak`);
     }
     const milestones = goal?.milestones || [];
+    const sortedMilestones = [...milestones].sort((a, b) => (a.order || 0) - (b.order || 0));
     const completedCount = milestones.filter(m => m.status === 'completed' || m.completed === true).length;
     if (milestones.length > 0) {
       analyticsPills.push(`✓ ${completedCount}/${milestones.length} Milestones (${progressPct}%)`);
@@ -939,7 +1345,6 @@ export class CanvasWallpaperEngine {
     hudCursorY += ringRadius * 2 + 30;
 
     // Completed Milestones & Current Focus Card inside HUD
-    const sortedMilestones = [...milestones].sort((a, b) => (a.order || 0) - (b.order || 0));
     const completedList = sortedMilestones.filter(m => m.status === 'completed' || m.completed === true);
 
     const milestoneCardH = 210;
@@ -997,14 +1402,14 @@ export class CanvasWallpaperEngine {
 
     hudCursorY += milestoneCardH + 25;
 
-    // Achievement Badges Row in HUD
+    // Achievement Badges Row in HUD (Rendered with Luxury Medallions)
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     ctx.font = `700 14px ${fontPrimary}`;
     ctx.fillStyle = palette.secondaryText;
     ctx.fillText('ACHIEVEMENTS EARNED', hudInnerLeft, hudCursorY);
 
-    const unlockedBadges = badges.filter(b => b.unlocked);
+    const unlockedBadges = (badges || []).filter(b => b.unlocked);
     const highestBadge = unlockedBadges[unlockedBadges.length - 1];
     if (highestBadge) {
       ctx.textAlign = 'right';
@@ -1015,27 +1420,14 @@ export class CanvasWallpaperEngine {
 
     hudCursorY += 24;
 
-    const badgeSize = 52;
-    const badgeGap = (hudInnerWidth - (badgeSize * 5)) / 4;
+    const desktopBadgeRadius = 26; // 52px diameter
+    const badgeGap = (hudInnerWidth - (desktopBadgeRadius * 2 * 5)) / 4;
 
     badges.forEach((b, idx) => {
-      const bx = hudInnerLeft + (idx * (badgeSize + badgeGap));
-      const by = hudCursorY;
+      const cx = hudInnerLeft + (idx * (desktopBadgeRadius * 2 + badgeGap)) + desktopBadgeRadius;
+      const cy = hudCursorY + desktopBadgeRadius;
 
-      ctx.beginPath();
-      ctx.arc(bx + (badgeSize / 2), by + (badgeSize / 2), badgeSize / 2, 0, Math.PI * 2);
-      ctx.fillStyle = b.unlocked ? (b.color || '#F59E0B') : 'rgba(255, 255, 255, 0.08)';
-      ctx.fill();
-      ctx.strokeStyle = b.unlocked ? '#FFFFFF' : 'rgba(255, 255, 255, 0.2)';
-      ctx.lineWidth = b.unlocked ? 2 : 1;
-      ctx.stroke();
-
-      ctx.font = `800 16px ${fontPrimary}`;
-      ctx.fillStyle = b.unlocked ? '#FFFFFF' : 'rgba(255, 255, 255, 0.4)';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      const label = b.key === 'FIRST_STEP' ? '1' : (b.key === 'ACHIEVER' ? '★' : `${b.thresholdPct}%`);
-      ctx.fillText(label, bx + (badgeSize / 2), by + (badgeSize / 2));
+      this.drawLuxuryBadge(ctx, cx, cy, desktopBadgeRadius, b, palette);
     });
   }
 }
