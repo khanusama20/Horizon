@@ -154,26 +154,6 @@
               </div>
             </div>
           </div>
-
-          <!-- Right: Basic Reorder Buttons -->
-          <div class="d-flex flex-column flex-shrink-0 ms-1">
-            <v-btn
-              icon="mdi-chevron-up"
-              size="x-small"
-              variant="text"
-              color="medium-emphasis"
-              :disabled="idx === 0"
-              @click="moveMilestone(idx, -1)"
-            />
-            <v-btn
-              icon="mdi-chevron-down"
-              size="x-small"
-              variant="text"
-              color="medium-emphasis"
-              :disabled="idx === sortedMilestones.length - 1"
-              @click="moveMilestone(idx, 1)"
-            />
-          </div>
         </div>
       </v-card>
     </div>

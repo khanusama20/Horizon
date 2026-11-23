@@ -54,17 +54,13 @@
                 badge.unlocked ? 'border-unlocked-badge' : 'border-locked-badge'
               ]"
             >
-              <v-avatar
-                :color="badge.unlocked ? 'soft-orange' : 'surface'"
-                size="42"
-                class="mb-2"
-              >
-                <v-icon
-                  :icon="badge.icon"
-                  :color="badge.unlocked ? 'primary' : 'medium-emphasis'"
-                  size="22"
+              <div class="mb-2 d-flex justify-center align-center">
+                <RealBadgeGraphic
+                  :badge-key="badge.key"
+                  :unlocked="badge.unlocked"
+                  :size="52"
                 />
-              </v-avatar>
+              </div>
 
               <div class="text-caption font-weight-bold text-primary-text text-truncate w-100">
                 {{ badge.name }}
@@ -94,6 +90,7 @@
 import { computed } from 'vue';
 import { evaluateBadges, getMotivationalQuote } from '../../services/badgeEngine.js';
 import { calculateProgress } from '../../services/milestoneEngine.js';
+import RealBadgeGraphic from './RealBadgeGraphic.vue';
 
 const props = defineProps({
   milestones: {

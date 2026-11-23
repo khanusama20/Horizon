@@ -65,19 +65,6 @@
                     </p>
                   </div>
                 </div>
-
-                <div class="d-flex align-center gap-2 ms-auto flex-shrink-0">
-                  <v-btn
-                    icon="mdi-close"
-                    size="x-small"
-                    variant="text"
-                    color="medium-emphasis"
-                    class="flex-shrink-0"
-                    aria-label="Dismiss banner"
-                    title="Dismiss banner"
-                    @click="showIntroBanner = false"
-                  />
-                </div>
               </div>
 
               <!-- Visual Stepper: 4-Step Guided Roadmap -->

@@ -213,7 +213,7 @@
         <div class="d-flex align-center justify-space-between mb-3">
           <div class="d-flex align-center gap-2">
             <v-icon icon="mdi-format-list-numbered" color="primary" size="20" />
-            <span class="text-subtitle-2 font-weight-bold text-primary-text">
+            <span class="text-subtitle-2 font-weight-bold course-outline-title">
               Course Outline ({{ rawSectionsCount }} Sections Imported)
             </span>
           </div>
@@ -244,11 +244,10 @@
             v-for="(sec, idx) in goal.courseMetadata.rawSections"
             :key="idx"
             size="small"
-            color="surface"
-            class="text-caption font-weight-medium border"
+            class="section-outline-chip text-caption font-weight-medium border"
           >
             <span class="text-primary font-weight-bold me-1">{{ idx + 1 }}.</span>
-            {{ sec }}
+            <span class="section-title-text">{{ sec }}</span>
           </v-chip>
         </div>
       </v-card>
@@ -590,6 +589,17 @@ async function handleSaveGoal() {
 </script>
 
 <style scoped>
+.course-outline-title {
+  color: #1B1814 !important;
+}
+.section-outline-chip {
+  background-color: var(--color-surface, #FFFDF8) !important;
+  color: #1B1814 !important;
+  border-color: var(--color-border, #E7DED0) !important;
+}
+.section-outline-chip .section-title-text {
+  color: #1B1814 !important;
+}
 .max-h-140 {
   max-height: 140px;
 }

@@ -1,13 +1,12 @@
 <template>
   <div
     id="section-mockup-preview"
-    class="dashboard-preview-card pa-4 mb-5 border rounded-xl cursor-pointer"
-    role="button"
-    tabindex="0"
-    aria-label="Open dedicated mobile wallpaper preview"
-    @click="$emit('open-preview')"
-    @keydown.enter="$emit('open-preview')"
-    @keydown.space.prevent="$emit('open-preview')"
+    class="dashboard-preview-card pa-4 mb-5 border rounded-xl"
+    role="region"
+    aria-label="Mobile wallpaper preview section"
+    @click="handleCardClick"
+    @keydown.enter="handleCardKeydown"
+    @keydown.space.prevent="handleCardKeydown"
   >
     <div class="d-flex flex-wrap align-center justify-space-between gap-3">
       <!-- Left: Phone Graphic / Avatar + Titles -->
@@ -62,7 +61,25 @@ const props = defineProps({
   }
 });
 
-defineEmits(['open-preview']);
+const emit = defineEmits(['open-preview']);
+
+function isMobileScreen() {
+  return typeof window !== 'undefined' && window.innerWidth < 768;
+}
+
+function handleCardClick() {
+  // On mobile screens, tapping the card still navigates to dedicated preview.
+  // On desktop / large screens, only the "Open Dedicated Preview" button triggers the action.
+  if (isMobileScreen()) {
+    emit('open-preview');
+  }
+}
+
+function handleCardKeydown(e) {
+  if (e.key === 'Enter' || e.key === ' ' || e.code === 'Space') {
+    emit('open-preview');
+  }
+}
 
 const previewBackground = computed(() => {
   const theme = getTheme(props.goal?.templateId || 'alpine-peak');
@@ -79,12 +96,25 @@ const previewBackground = computed(() => {
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
   background: linear-gradient(135deg, #FFFDF8 0%, #FAF5EC 100%) !important;
   border: 1px solid var(--color-border);
+  cursor: default;
+}
+
+@media (max-width: 767.98px) {
+  .dashboard-preview-card {
+    cursor: pointer;
+  }
 }
 
 .dashboard-preview-card:hover {
-  transform: translateY(-2px);
   border-color: rgba(233, 120, 36, 0.45) !important;
-  box-shadow: 0 6px 18px rgba(233, 120, 36, 0.12) !important;
+  box-shadow: 0 4px 14px rgba(233, 120, 36, 0.08) !important;
+}
+
+@media (max-width: 767.98px) {
+  .dashboard-preview-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(233, 120, 36, 0.12) !important;
+  }
 }
 
 .preview-thumbnail-badge {

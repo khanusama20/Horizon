@@ -14,6 +14,17 @@
         <v-card-subtitle class="section-header-subtitle text-caption text-medium-emphasis">
           Paste course modules, Roman numerals, or bullet points to instantly extract clean sections.
         </v-card-subtitle>
+        <template #append>
+          <v-btn
+            icon="mdi-close"
+            variant="text"
+            size="small"
+            color="medium-emphasis"
+            aria-label="Close dialog"
+            title="Close"
+            @click="$emit('update:modelValue', false)"
+          />
+        </template>
       </v-card-item>
 
       <v-card-text class="pt-2 px-2">
