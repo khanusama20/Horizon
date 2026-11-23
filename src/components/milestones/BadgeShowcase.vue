@@ -61,7 +61,7 @@
                 <RealBadgeGraphic
                   :badge-key="badge.key"
                   :unlocked="badge.unlocked"
-                  :size="52"
+                  :size="60"
                 />
               </div>
 
@@ -125,13 +125,14 @@ const motivation = computed(() => {
 
 <style scoped>
 .border-unlocked-badge {
-  border: 1.5px solid var(--color-primary-orange) !important;
-  box-shadow: 0 2px 8px rgba(233, 120, 36, 0.12);
+  border: 1.5px solid rgba(217, 119, 6, 0.45) !important;
+  box-shadow: 0 4px 14px rgba(217, 119, 6, 0.14) !important;
+  background: linear-gradient(180deg, #FFFDF8 0%, #FFF9EE 100%) !important;
 }
 
 .border-locked-badge {
   border: 1px solid var(--color-border) !important;
-  opacity: 0.75;
+  opacity: 0.85;
 }
 
 .transition-all {
