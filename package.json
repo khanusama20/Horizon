@@ -15,6 +15,7 @@
     "dev:all:ip": "concurrently -n \"VITE,API\" -c \"cyan,magenta\" \"vite --host 0.0.0.0\" \"node server/index.js --ip\"",
     "build": "vite build",
     "preview": "vite preview",
+    "deploy": "vite build && firebase.cmd deploy --only hosting",
     "test": "vitest run",
     "test:unit": "vitest run",
     "test:watch": "vitest"
