@@ -35,6 +35,7 @@ dist-ssr/
 .temp/
 .tmp/
 *.tmp
+*.zip
 .firebase/
 server/uploads/temp/*
 !server/uploads/temp/.gitkeep
