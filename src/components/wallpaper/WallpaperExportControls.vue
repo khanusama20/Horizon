@@ -26,20 +26,20 @@
           density="comfortable"
           color="primary"
           variant="outlined"
-          class="w-100"
+          class="w-100 preset-btn-toggle"
           @update:model-value="$emit('update:preset', $event)"
         >
-          <v-btn value="MOBILE" class="flex-grow-1 font-weight-medium" size="small">
-            <v-icon icon="mdi-cellphone" start size="16" />
-            9:16 (1920)
+          <v-btn value="MOBILE" class="flex-grow-1 font-weight-medium preset-toggle-btn" size="small">
+            <v-icon icon="mdi-cellphone" start size="15" class="preset-btn-icon" />
+            <span class="preset-btn-label">9:16<span class="d-none d-sm-inline"> (1920)</span></span>
           </v-btn>
-          <v-btn value="MOTOROLA_EDGE" class="flex-grow-1 font-weight-medium" size="small">
-            <v-icon icon="mdi-cellphone-text" start size="16" />
-            Edge 50 (2400)
+          <v-btn value="MOTOROLA_EDGE" class="flex-grow-1 font-weight-medium preset-toggle-btn" size="small">
+            <v-icon icon="mdi-cellphone-text" start size="15" class="preset-btn-icon" />
+            <span class="preset-btn-label">Edge 50<span class="d-none d-sm-inline"> (2400)</span></span>
           </v-btn>
-          <v-btn value="DESKTOP" class="flex-grow-1 font-weight-medium" size="small">
-            <v-icon icon="mdi-monitor" start size="16" />
-            Desktop (1080)
+          <v-btn value="DESKTOP" class="flex-grow-1 font-weight-medium preset-toggle-btn" size="small">
+            <v-icon icon="mdi-monitor" start size="15" class="preset-btn-icon" />
+            <span class="preset-btn-label">Desktop<span class="d-none d-sm-inline"> (1080)</span></span>
           </v-btn>
         </v-btn-toggle>
       </v-col>
@@ -72,7 +72,7 @@
       <span class="text-primary font-weight-bold flex-shrink-0">PNG</span>
     </v-sheet>
 
-    <!-- Download Action Button -->
+    <!-- Download Action Button: Responsive label adapts on mobile without clipping -->
     <v-btn
       color="primary"
       size="x-large"
@@ -81,10 +81,23 @@
       :loading="isExporting"
       :disabled="isExporting"
       prepend-icon="mdi-download"
-      class="font-weight-bold text-uppercase tracking-wider mb-2"
+      class="download-action-btn-responsive font-weight-bold mb-2 shadow-orange"
       @click="handleExport"
     >
-      Download Wallpaper ({{ preset === 'DESKTOP' ? '1920×1080' : (preset === 'MOTOROLA_EDGE' ? '1080×2400' : '1080×1920') }})
+      <!-- Desktop Full Label (Visible on sm and up) -->
+      <span class="d-none d-sm-inline text-uppercase tracking-wider">
+        Download Wallpaper ({{ resolutionText }})
+      </span>
+
+      <!-- Mobile Clean Stacked Label (Visible below sm) -->
+      <span class="d-inline-flex d-sm-none flex-column align-center line-height-tight py-1">
+        <span class="text-uppercase font-weight-bold download-mobile-main-text">
+          Download Wallpaper
+        </span>
+        <span class="text-caption font-weight-regular mt-0.5 download-mobile-res-text">
+          {{ resolutionText }} px
+        </span>
+      </span>
     </v-btn>
 
     <!-- Unobtrusive Static PNG Clarification Note -->
@@ -148,6 +161,12 @@ const resolutionLabel = computed(() => {
   return 'Mobile 1080 × 1920 px (9:16)';
 });
 
+const resolutionText = computed(() => {
+  if (props.preset === 'DESKTOP') return '1920×1080';
+  if (props.preset === 'MOTOROLA_EDGE') return '1080×2400';
+  return '1080×1920';
+});
+
 const expectedFilename = computed(() => {
   return generateWallpaperFilename(props.goal, props.goal?.templateId, props.preset);
 });
@@ -205,5 +224,32 @@ async function handleExport() {
 }
 .tracking-wider {
   letter-spacing: 0.05em;
+}
+
+.download-action-btn-responsive {
+  height: auto !important;
+  min-height: 52px;
+  padding: 8px 16px !important;
+  white-space: normal !important;
+}
+
+.download-mobile-main-text {
+  font-size: 0.875rem;
+  letter-spacing: 0.03em;
+}
+
+.download-mobile-res-text {
+  font-size: 0.725rem;
+  opacity: 0.9;
+}
+
+@media (max-width: 480px) {
+  .preset-toggle-btn {
+    padding: 0 4px !important;
+  }
+
+  .preset-btn-label {
+    font-size: 0.6875rem !important;
+  }
 }
 </style>

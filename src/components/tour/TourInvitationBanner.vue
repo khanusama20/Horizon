@@ -29,7 +29,7 @@
         </div>
 
         <!-- Right: Action Buttons -->
-        <div class="d-flex align-center gap-2 flex-wrap ms-auto flex-shrink-0">
+        <div class="d-flex align-center gap-2 flex-wrap tour-actions-wrapper">
           <button
             type="button"
             class="tour-secondary-btn font-weight-medium text-caption"
@@ -137,5 +137,28 @@ const { showInvitation, startTour, dismissInvitation } = useTourGuide();
 .banner-slide-leave-to {
   opacity: 0;
   transform: translateY(-8px);
+}
+
+.tour-actions-wrapper {
+  margin-left: auto;
+}
+
+@media (max-width: 599.98px) {
+  .tour-actions-wrapper {
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-top: 8px !important;
+    display: flex !important;
+    gap: 8px !important;
+  }
+  .tour-actions-wrapper .tour-primary-btn,
+  .tour-actions-wrapper .tour-secondary-btn {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    text-align: center !important;
+    padding: 8px 6px !important;
+    font-size: 0.75rem !important;
+    white-space: nowrap !important;
+  }
 }
 </style>

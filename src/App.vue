@@ -380,6 +380,7 @@ function handleBackToDashboard() {
   overflow-y: auto;
   overflow-x: hidden;
   background-color: var(--color-bg-page);
+  box-sizing: border-box;
 }
 
 .dashboard-content-wrapper {
@@ -387,6 +388,7 @@ function handleBackToDashboard() {
   margin: 0 auto;
   padding: 24px 20px 48px;
   width: 100%;
+  box-sizing: border-box;
 }
 
 /* View Transition: Smooth Subtle Slide & Fade */

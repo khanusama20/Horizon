@@ -11,31 +11,31 @@
         </div>
       </div>
 
-      <!-- Mode Selector Pills -->
-      <div class="d-flex align-center gap-1 bg-surface-variant pa-1 rounded-pill border">
+      <!-- Mode Selector Tabs: Icon on top & label underneath on mobile, horizontal on desktop -->
+      <div class="theme-mode-tabs-container">
         <button
           type="button"
           :class="['mode-tab-btn', activeMode === 'nature' ? 'is-active' : '']"
           @click="activeMode = 'nature'"
         >
-          <v-icon icon="mdi-image-filter-hdr" size="14" class="me-1" />
-          Nature Art
+          <v-icon icon="mdi-image-filter-hdr" class="tab-icon" />
+          <span class="tab-label">Nature Art</span>
         </button>
         <button
           type="button"
           :class="['mode-tab-btn', activeMode === 'colors' ? 'is-active' : '']"
           @click="activeMode = 'colors'"
         >
-          <v-icon icon="mdi-palette-swatch-outline" size="14" class="me-1" />
-          Elegant Colors
+          <v-icon icon="mdi-palette-swatch-outline" class="tab-icon" />
+          <span class="tab-label">Elegant Colors</span>
         </button>
         <button
           type="button"
           :class="['mode-tab-btn', activeMode === 'custom' ? 'is-active' : '']"
           @click="activeMode = 'custom'"
         >
-          <v-icon icon="mdi-camera-outline" size="14" class="me-1" />
-          Custom Photo
+          <v-icon icon="mdi-camera-outline" class="tab-icon" />
+          <span class="tab-label">Custom Photo</span>
         </button>
       </div>
     </div>
@@ -289,29 +289,81 @@ function onImageCleared() {
 </script>
 
 <style scoped>
+.theme-mode-tabs-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background-color: var(--color-surface-variant, #F4EFE6);
+  padding: 4px;
+  border-radius: 9999px;
+  border: 1px solid var(--color-border, #E2D9CC);
+}
+
 .mode-tab-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-size: 0.75rem;
   font-weight: 600;
-  padding: 5px 12px;
+  padding: 6px 14px;
   border-radius: 9999px;
   background: transparent;
-  color: var(--color-text-secondary);
+  color: var(--color-text-secondary, #786F66);
   border: none;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
+.mode-tab-btn .tab-icon {
+  font-size: 15px;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
 .mode-tab-btn:hover {
-  color: var(--color-text-primary);
+  color: var(--color-text-primary, #2D251E);
 }
 
 .mode-tab-btn.is-active {
-  background-color: var(--color-surface-card);
-  color: var(--color-primary-orange);
+  background-color: var(--color-surface-card, #FFFFFF);
+  color: var(--color-primary-orange, #D97706);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+/* Mobile Screens: Vertical alignment (icon on top, label underneath, centered, equal-width) */
+@media (max-width: 599.98px) {
+  .theme-mode-tabs-container {
+    width: 100%;
+    border-radius: 12px;
+    padding: 4px;
+    gap: 4px;
+  }
+
+  .mode-tab-btn {
+    flex: 1 1 0;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 7px 2px;
+    border-radius: 8px;
+    min-width: 0;
+  }
+
+  .mode-tab-btn .tab-icon {
+    font-size: 18px;
+    margin-right: 0 !important;
+    margin-bottom: 3px;
+  }
+
+  .mode-tab-btn .tab-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    line-height: 1.15;
+    white-space: nowrap;
+    text-align: center;
+    max-width: 100%;
+  }
 }
 
 .swatch-bar {

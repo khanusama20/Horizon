@@ -45,10 +45,9 @@
         </v-btn>
       </div>
 
-      <div class="d-flex align-center justify-center gap-1 mt-3 text-caption text-medium-emphasis text-center" style="font-size: 0.725rem !important;">
-        <v-icon icon="mdi-shield-lock-outline" color="success" size="14" class="me-1" />
-        <span>Temporary in-memory only (Object URL). Zero bytes stored in LocalStorage or cloud. Clears on reload.</span>
-      </div>
+      <p class="mt-3 mb-0 text-caption text-medium-emphasis text-center" style="font-size: 0.725rem !important;">
+        Temporary in-memory only (Object URL). Zero bytes stored in LocalStorage or cloud. Clears on reload.
+      </p>
     </div>
 
     <!-- State 2: Dropzone / File Picker Trigger -->
@@ -76,10 +75,9 @@
         Select Image (PNG, JPG, WebP)
       </v-btn>
 
-      <div class="d-flex align-center justify-center gap-1 mt-3 text-caption text-medium-emphasis" style="font-size: 0.725rem !important;">
-        <v-icon icon="mdi-memory" size="14" class="me-1" />
-        <span>In-memory temporary session: Image will be rendered onto exported PNG without server storage.</span>
-      </div>
+      <p class="mt-3 mb-0 text-caption text-medium-emphasis text-center" style="font-size: 0.725rem !important;">
+        In-memory temporary session: Image will be rendered onto exported PNG without server storage.
+      </p>
     </div>
 
     <!-- Validation Error Alert -->

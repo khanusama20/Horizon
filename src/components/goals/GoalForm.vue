@@ -33,40 +33,32 @@
     <!-- Source Ingestion Banner / Multi-Source Selector -->
     <v-sheet id="section-source-selection" color="surface-variant" class="pa-4 rounded-lg mb-4" border>
       <!-- Source Provider Selector Tabs -->
-      <div class="d-flex align-center flex-wrap gap-2 mb-3">
-        <span class="text-caption font-weight-bold text-uppercase tracking-wider text-medium-emphasis me-1">
+      <div class="d-flex align-center flex-wrap gap-2 mb-3 source-selector-row">
+        <span class="text-caption font-weight-bold text-uppercase tracking-wider text-medium-emphasis me-1 source-label">
           Source:
         </span>
-        <!-- <v-btn
-          size="small"
-          :variant="selectedSourceMode === 'udemy' ? 'flat' : 'outlined'"
-          :color="selectedSourceMode === 'udemy' ? 'primary' : 'medium-emphasis'"
-          class="font-weight-bold rounded-pill text-none"
-          prepend-icon="mdi-school-outline"
-          @click="selectedSourceMode = 'udemy'"
-        >
-          Udemy & Web
-        </v-btn> -->
-        <v-btn
-          size="small"
-          :variant="selectedSourceMode === 'youtube' ? 'flat' : 'outlined'"
-          :color="selectedSourceMode === 'youtube' ? 'red-darken-1' : 'medium-emphasis'"
-          class="font-weight-bold rounded-pill text-none"
-          prepend-icon="mdi-youtube"
-          @click="selectedSourceMode = 'youtube'"
-        >
-          YouTube Playlist
-        </v-btn>
-        <v-btn
-          size="small"
-          :variant="selectedSourceMode === 'manual' ? 'flat' : 'outlined'"
-          :color="selectedSourceMode === 'manual' ? 'primary' : 'medium-emphasis'"
-          class="font-weight-bold rounded-pill text-none"
-          prepend-icon="mdi-format-list-bulleted-type"
-          @click="selectedSourceMode = 'manual'"
-        >
-          Manual Syllabus
-        </v-btn>
+        <div class="d-flex align-center flex-wrap gap-2 flex-grow-1 min-w-0 source-buttons-group">
+          <v-btn
+            size="small"
+            :variant="selectedSourceMode === 'youtube' ? 'flat' : 'outlined'"
+            :color="selectedSourceMode === 'youtube' ? 'red-darken-1' : 'medium-emphasis'"
+            class="font-weight-bold rounded-pill text-none flex-grow-1 flex-sm-grow-0 source-tab-btn"
+            prepend-icon="mdi-youtube"
+            @click="selectedSourceMode = 'youtube'"
+          >
+            YouTube Playlist
+          </v-btn>
+          <v-btn
+            size="small"
+            :variant="selectedSourceMode === 'manual' ? 'flat' : 'outlined'"
+            :color="selectedSourceMode === 'manual' ? 'primary' : 'medium-emphasis'"
+            class="font-weight-bold rounded-pill text-none flex-grow-1 flex-sm-grow-0 source-tab-btn"
+            prepend-icon="mdi-format-list-bulleted-type"
+            @click="selectedSourceMode = 'manual'"
+          >
+            Manual Syllabus
+          </v-btn>
+        </div>
       </div>
 
       <!-- Mode 1: Udemy & Web URL Import -->
@@ -565,19 +557,19 @@
           color="primary"
           size="default"
           prepend-icon="mdi-map-marker-path"
-          class="font-weight-medium"
+          class="font-weight-medium flex-grow-1 flex-sm-grow-0"
           @click="generatePlanNow"
         >
           Generate Milestone Plan
         </v-btn>
-        <div class="d-flex gap-3 ms-auto">
+        <div class="d-flex gap-3 ms-auto flex-grow-1 flex-sm-grow-0 justify-end">
           <v-btn
             type="submit"
             color="primary"
             size="large"
             variant="flat"
             prepend-icon="mdi-content-save"
-            class="px-6 font-weight-bold"
+            class="px-6 font-weight-bold flex-grow-1 flex-sm-grow-0"
           >
             Save Goal
           </v-btn>

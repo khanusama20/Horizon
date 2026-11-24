@@ -162,4 +162,15 @@ const previewBackground = computed(() => {
 .shadow-orange {
   box-shadow: 0 3px 10px rgba(233, 120, 36, 0.25) !important;
 }
+
+@media (max-width: 599.98px) {
+  .dashboard-preview-card .ms-auto {
+    width: 100%;
+    margin-left: 0 !important;
+  }
+  .open-preview-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
 </style>

@@ -1,0 +1,164 @@
+[
+  {
+    "viewport": {
+      "name": "compact-mobile",
+      "label": "Compact Mobile",
+      "width": 320,
+      "height": 640
+    },
+    "scrollWidth": 313,
+    "clientWidth": 313,
+    "hasHorizontalPageScroll": false,
+    "badgeCount": 5,
+    "badgesWrap": false,
+    "badgesScrollable": true,
+    "tabsVertical": true,
+    "tabsEqualWidth": true,
+    "tabWidths": [
+      77,
+      77,
+      77
+    ],
+    "downloadBtnFits": true,
+    "downloadBtnWidth": 248,
+    "downloadBtnParentWidth": 282,
+    "downloadBtnLabel": "DOWNLOAD WALLPAPER 1080 × 1920 px",
+    "overlappingButtonsCount": 0,
+    "overlappingButtonPairs": []
+  },
+  {
+    "viewport": {
+      "name": "standard-mobile",
+      "label": "Standard Mobile",
+      "width": 360,
+      "height": 800
+    },
+    "scrollWidth": 353,
+    "clientWidth": 353,
+    "hasHorizontalPageScroll": false,
+    "badgeCount": 5,
+    "badgesWrap": false,
+    "badgesScrollable": true,
+    "tabsVertical": true,
+    "tabsEqualWidth": true,
+    "tabWidths": [
+      90,
+      90,
+      90
+    ],
+    "downloadBtnFits": true,
+    "downloadBtnWidth": 288,
+    "downloadBtnParentWidth": 322,
+    "downloadBtnLabel": "DOWNLOAD WALLPAPER 1080 × 1920 px",
+    "overlappingButtonsCount": 0,
+    "overlappingButtonPairs": []
+  },
+  {
+    "viewport": {
+      "name": "motorola-edge",
+      "label": "Motorola Edge 50 Fusion",
+      "width": 393,
+      "height": 873
+    },
+    "scrollWidth": 386,
+    "clientWidth": 386,
+    "hasHorizontalPageScroll": false,
+    "badgeCount": 5,
+    "badgesWrap": false,
+    "badgesScrollable": true,
+    "tabsVertical": true,
+    "tabsEqualWidth": true,
+    "tabWidths": [
+      101,
+      101,
+      101
+    ],
+    "downloadBtnFits": true,
+    "downloadBtnWidth": 321,
+    "downloadBtnParentWidth": 355,
+    "downloadBtnLabel": "DOWNLOAD WALLPAPER 1080 × 1920 px",
+    "overlappingButtonsCount": 0,
+    "overlappingButtonPairs": []
+  },
+  {
+    "viewport": {
+      "name": "large-mobile",
+      "label": "Large Mobile",
+      "width": 430,
+      "height": 932
+    },
+    "scrollWidth": 423,
+    "clientWidth": 423,
+    "hasHorizontalPageScroll": false,
+    "badgeCount": 5,
+    "badgesWrap": false,
+    "badgesScrollable": true,
+    "tabsVertical": true,
+    "tabsEqualWidth": true,
+    "tabWidths": [
+      113,
+      113,
+      113
+    ],
+    "downloadBtnFits": true,
+    "downloadBtnWidth": 358,
+    "downloadBtnParentWidth": 392,
+    "downloadBtnLabel": "DOWNLOAD WALLPAPER 1080 × 1920 px",
+    "overlappingButtonsCount": 0,
+    "overlappingButtonPairs": []
+  },
+  {
+    "viewport": {
+      "name": "tablet",
+      "label": "Tablet",
+      "width": 768,
+      "height": 1024
+    },
+    "scrollWidth": 761,
+    "clientWidth": 761,
+    "hasHorizontalPageScroll": false,
+    "badgeCount": 5,
+    "badgesWrap": false,
+    "badgesScrollable": true,
+    "tabsVertical": false,
+    "tabsEqualWidth": false,
+    "tabWidths": [
+      100,
+      123,
+      121
+    ],
+    "downloadBtnFits": true,
+    "downloadBtnWidth": 672,
+    "downloadBtnParentWidth": 714,
+    "downloadBtnLabel": "DOWNLOAD WALLPAPER (1080×1920)",
+    "overlappingButtonsCount": 0,
+    "overlappingButtonPairs": []
+  },
+  {
+    "viewport": {
+      "name": "desktop",
+      "label": "Desktop",
+      "width": 1366,
+      "height": 768
+    },
+    "scrollWidth": 1359,
+    "clientWidth": 1359,
+    "hasHorizontalPageScroll": false,
+    "badgeCount": 5,
+    "badgesWrap": false,
+    "badgesScrollable": false,
+    "tabsVertical": false,
+    "tabsEqualWidth": false,
+    "tabWidths": [
+      100,
+      123,
+      121
+    ],
+    "downloadBtnFits": true,
+    "downloadBtnWidth": 818,
+    "downloadBtnParentWidth": 860,
+    "downloadBtnLabel": "DOWNLOAD WALLPAPER (1080×1920)",
+    "overlappingButtonsCount": 0,
+    "overlappingButtonPairs": []
+  }
+]

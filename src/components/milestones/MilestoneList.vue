@@ -82,7 +82,7 @@
       >
         <div class="d-flex align-start justify-space-between">
           <!-- Left: Checkbox Toggle & Title -->
-          <div class="d-flex align-start gap-2 flex-grow-1 me-2">
+          <div class="d-flex align-start gap-2 flex-grow-1 me-2 min-w-0">
             <v-btn
               :icon="milestone.status === 'completed' ? 'mdi-checkbox-marked-circle' : 'mdi-checkbox-blank-circle-outline'"
               :color="milestone.status === 'completed' ? 'success' : 'medium-emphasis'"
@@ -92,7 +92,7 @@
               @click="toggleComplete(milestone.id)"
             />
 
-            <div class="pt-1">
+            <div class="pt-1 min-w-0 flex-grow-1">
               <div class="d-flex align-center flex-wrap gap-2 mb-1">
                 <!-- Milestone Order Badge -->
                 <span class="text-caption font-weight-bold text-primary">

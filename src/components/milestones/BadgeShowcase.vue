@@ -1,16 +1,16 @@
 <template>
   <v-card id="section-badges" color="surface" class="pa-5 mb-5">
-    <div class="d-flex align-center justify-space-between mb-4 gap-3">
-      <div class="section-header-row">
+    <div class="d-flex align-center justify-space-between mb-4 gap-3 flex-wrap">
+      <div class="section-header-row min-w-0">
         <v-avatar color="primary" size="32" class="flex-shrink-0">
           <v-icon icon="mdi-trophy-variant" color="white" size="18" />
         </v-avatar>
-        <div class="section-header-content">
+        <div class="section-header-content min-w-0">
           <h2 class="section-header-title">Achievements & Badges</h2>
           <span class="section-header-subtitle">Unlock 5 nature milestone rewards as your deadline approaches</span>
         </div>
       </div>
-      <v-chip size="small" color="primary" variant="tonal" class="font-weight-bold">
+      <v-chip size="small" color="primary" variant="tonal" class="font-weight-bold flex-shrink-0">
         {{ unlockedCount }} / 5 Unlocked
       </v-chip>
     </div>
@@ -34,15 +34,12 @@
       </div>
     </v-sheet>
 
-    <!-- 5 Nature Badges Row -->
-    <v-row dense>
-      <v-col
+    <!-- 5 Nature Badges: Horizontal Scrollable Row on Mobile, Distributed Row on Desktop -->
+    <div class="badges-scroll-row">
+      <div
         v-for="badge in badges"
         :key="badge.key"
-        cols="12"
-        sm="6"
-        md="2"
-        class="flex-grow-1"
+        class="badge-item-col"
       >
         <v-tooltip location="top">
           <template #activator="{ props }">
@@ -53,7 +50,7 @@
               :aria-label="`${badge.name}: ${badge.unlocked ? 'Unlocked' : 'Locked'}`"
               :color="badge.unlocked ? 'surface' : 'surface-variant'"
               :class="[
-                'pa-3 rounded-lg text-center h-100 transition-all border d-flex flex-column align-center justify-space-between',
+                'pa-3 rounded-lg text-center h-100 transition-all border d-flex flex-column align-center justify-space-between badge-card-sheet',
                 badge.unlocked ? 'border-unlocked-badge' : 'border-locked-badge'
               ]"
             >
@@ -61,7 +58,7 @@
                 <RealBadgeGraphic
                   :badge-key="badge.key"
                   :unlocked="badge.unlocked"
-                  :size="60"
+                  :size="56"
                 />
               </div>
 
@@ -85,8 +82,8 @@
             <div class="tooltip-body text-caption">{{ badge.description }}</div>
           </div>
         </v-tooltip>
-      </v-col>
-    </v-row>
+      </div>
+    </div>
   </v-card>
 </template>
 
@@ -121,6 +118,48 @@ const motivation = computed(() => {
 </script>
 
 <style scoped>
+/* Badges Horizontal Scrollable Row on Mobile, Distributed Row on Desktop */
+.badges-scroll-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 2px 8px;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.badges-scroll-row::-webkit-scrollbar {
+  display: none;
+}
+
+.badge-item-col {
+  flex: 0 0 132px;
+  min-width: 132px;
+  max-width: 140px;
+}
+
+.badge-card-sheet {
+  min-height: 165px;
+}
+
+@media (min-width: 960px) {
+  .badges-scroll-row {
+    overflow-x: visible;
+    gap: 16px;
+  }
+
+  .badge-item-col {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: none;
+  }
+}
+
 .border-unlocked-badge {
   border: 1.5px solid rgba(217, 119, 6, 0.45) !important;
   box-shadow: 0 4px 14px rgba(217, 119, 6, 0.14) !important;

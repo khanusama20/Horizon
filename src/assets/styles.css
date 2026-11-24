@@ -34,6 +34,12 @@
   --card-border: 1px solid #E7DED0;
 }
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 html {
   scroll-behavior: smooth;
   background-color: var(--color-bg-page);
